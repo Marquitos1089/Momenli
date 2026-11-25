@@ -234,6 +234,18 @@ details.msr summary{cursor:pointer;color:var(--accent);font:600 .85rem var(--fon
 .chip.past[aria-pressed="true"]{opacity:1;border-style:solid}
 .chip.now:not([aria-pressed="true"]){border-color:var(--accent);color:var(--accent)}
 .tabs[hidden]{display:none}
+/* Monatsfotos bis 18, Kamera, Zeitraffer */
+.tog{display:flex;gap:10px;align-items:flex-start;font-size:.88rem;margin:0 0 12px;cursor:pointer}
+.tog input{width:20px;height:20px;accent-color:var(--accent);margin:1px 0 0;flex:none}
+details.mgroup{margin-bottom:10px}
+details.mgroup summary{display:flex;justify-content:space-between;align-items:center;cursor:pointer;font:600 .95rem var(--font-body);padding:10px 2px;list-style:none}
+details.mgroup summary::-webkit-details-marker{display:none}
+details.mgroup summary::after{content:"›";color:var(--muted);font-size:1.2rem;transform:rotate(90deg);transition:transform .2s;margin-left:8px}
+details.mgroup:not([open]) summary::after{transform:none}
+details.mgroup summary span{margin-left:auto;font:400 .8rem var(--font-body);color:var(--muted)}
+.cam{position:relative;border-radius:20px;overflow:hidden;margin-top:14px;background:#000;aspect-ratio:3/4}
+.cam video,.cam img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam img{pointer-events:none}
 </style>
 </head>
 <body>
@@ -366,7 +378,7 @@ var PF=[['name','Name','Emma Sophie Müller'],['geb','Geboren am','2025-01-15'],
 ['gew','Gewicht','3.450 g'],['gr','Größe','52 cm'],['kopf','Kopfumfang','34 cm'],['blut','Blutgruppe','A positiv'],
 ['haar','Haare','Dunkelbraun'],['aug','Augen','Blau'],['eltern','Eltern','Sarah & Max Müller']];
 
-var S={tab:'home',filter:'alle',msForm:false,add:null,mem:[],ms:[],profile:{},nextId:100,music:'spieluhr',musicName:'',sample:true,kids:[],cur:'',ritYear:0,ritQ:'',lt:null,iv:0};
+var S={tab:'home',filter:'alle',msForm:false,add:null,mem:[],ms:[],profile:{},nextId:100,music:'spieluhr',musicName:'',sample:true,kids:[],cur:'',filmMode:'leben',ritYear:0,ritQ:'',lt:null,iv:0};
 
 /* ---------- Mehrere Kinder: S.mem, S.ms, S.profile zeigen immer auf das gewählte Kind ---------- */
 function curKid(){for(var i=0;i<S.kids.length;i++)if(S.kids[i].kid===S.cur)return S.kids[i];return S.kids[0]}
@@ -391,7 +403,7 @@ function loadSample(){
   S.kids=[{kid:'k1',profile:S.profile,mem:S.mem,ms:S.ms,sample:true}];S.cur='k1';
   PF.forEach(function(f){S.profile[f[0]]=f[2]});
   SEED.forEach(function(r,i){
-    var mm=/^(\d+) Monat/.exec(r[2]),rit=i===0?'monat-0':(mm&&+mm[1]<=12?'monat-'+mm[1]:(r[2]==='Erster Geburtstag'?'geb-1':''));
+    var mm=/^(\d+) Monat/.exec(r[2]),rit=i===0?'monat-0':(mm?'monat-'+mm[1]:(r[2]==='Erster Geburtstag'?'geb-1':''));
     S.mem.push({id:i+1,date:parseISO(r[0]),type:r[1],title:r[2],note:r[3],ms:r[4]||'',img:null,dur:8+(i*7)%40,auto:false,media:false,rit:rit});
   });
   S.kids[0].rit=sampleRit();
@@ -637,7 +649,15 @@ function setCustomMusic(blob,name,quiet){
 
 /* ---------- Film ---------- */
 var F=null;
+function tlPhotos(){return S.mem.filter(function(m){return monthNo(m.rit)>=0}).sort(function(a,b){return monthNo(a.rit)-monthNo(b.rit)})}
+function buildTL(){
+  var ph=tlPhotos(),sc=[{k:'tltitle',d:2600,n:ph.length}];
+  ph.forEach(function(m){sc.push({k:'tl',d:650,m:m,n:monthNo(m.rit)})});
+  sc.push({k:'tlend',d:3200});
+  var t=0;sc.forEach(function(x){x.t0=t;t+=x.d});return {sc:sc,total:t,mode:'tl'};
+}
 function buildFilm(){
+  if(S.filmMode==='tl')return buildTL();
   var list=S.mem.concat(ritFilmItems()).sort(function(a,b){return a.date-b.date||(a.kind?1:0)-(b.kind?1:0)||a.id-b.id});
   var mp=monthPhotos(),montaged=false;
   function montage(){if(montaged||mp.length<3)return;montaged=true;sc.push({k:'montage',d:1600+mp.length*450,items:mp})}
@@ -664,6 +684,9 @@ function buildFilm(){
 function filmLead(){var mo=ageMonths(TODAY);return mo<1?'Die ersten Tage':(mo===1?'Der erste Monat':'Die ersten '+mo+' Monate')}
 function sceneHTML(s){
   var dur=(s.d/F.speed/1000).toFixed(2);
+  if(s.k==='tltitle')return '<div class="sc"><p class="eyebrow">Aufwachsen im Zeitraffer</p><h2>'+esc(first())+'</h2><p class="lead">'+s.n+' Monatsfotos</p><p class="sub">'+fmtDate(BIRTH)+' bis '+fmtDate(TODAY)+'</p></div>';
+  if(s.k==='tlend')return '<div class="sc"><p class="eyebrow">Abspann</p><h2>'+ageText(TODAY)+'</h2>'+(growthLine()?'<p class="lead">'+growthLine()+'</p>':'')+'<p class="sub">Jeder Moment zählt.</p></div>';
+  if(s.k==='tl')return '<div class="sc sc-mem" style="animation:none">'+cover(s.m,'')+'<div class="cap"><h3>'+(s.n===0?'Geburt':ageLabelM(s.n))+'</h3><p>'+fmtShort(s.m.date)+'</p></div></div>';
   if(s.k==='letter')return '<div class="sc"><p class="eyebrow">Brief zum '+s.y+'. Geburtstag</p><p class="letter">'+(s.L.text?'„'+esc(excerpt(s.L.text,260))+'“':'Eine Sprachnachricht'+(s.L.dur?' · '+mmss(s.L.dur*1000):''))+'</p><p class="sub">Von '+esc(s.L.from||'Mama und Papa')+'</p></div>';
   if(s.k==='iv')return '<div class="sc"><p class="eyebrow">Mini-Interview mit '+yrs(s.y)+'</p>'+s.pairs.map(function(p,i){return '<div class="qa" style="animation-delay:'+(i*1.2/F.speed).toFixed(2)+'s"><p class="sub">'+esc(p[0])+'</p><p class="lead">'+esc(p[1])+'</p></div>'}).join('')+'</div>';
   if(s.k==='montage')return '<div class="sc" style="justify-content:flex-start"><p class="eyebrow">Monatsfotos</p><h2 style="font-size:2.1rem">Das erste Jahr in '+s.items.length+' Fotos</h2><div class="mgrid">'+s.items.map(function(m,i){return '<div style="animation-delay:'+((800+i*450)/F.speed/1000).toFixed(2)+'s">'+cover(m,'sm')+'</div>'}).join('')+'</div></div>';
@@ -682,16 +705,19 @@ function musicChips(){
 function filmHTML(){
   var sp=F?F.speed:1;
   F=buildFilm();F.t=0;F.idx=-1;F.playing=false;F.speed=sp;F.last=0;F.raf=0;
+  var tl=S.filmMode==='tl',np=tl?tlPhotos().length:0;
   var chap=F.sc.filter(function(s){return s.k==='chapter'}).map(function(s){return '<button class="chip" data-act="film-seek" data-t="'+s.t0+'" aria-pressed="false">'+s.name+'</button>'}).join('');
   return topHTML()
-   +'<h1>Momenli Film</h1><p class="lede">Aus '+S.mem.length+' Momenten automatisch zusammengestellt.</p>'
+   +'<h1>Momenli Film</h1>'
+   +'<div class="chips" style="margin-top:12px"><button class="chip" data-act="film-mode" data-v="leben" aria-pressed="'+!tl+'">Lebensfilm</button><button class="chip" data-act="film-mode" data-v="tl" aria-pressed="'+tl+'">Aufwachsen im Zeitraffer</button></div>'
+   +'<p class="lede">'+(tl?(np<2?'Hier läuft später jedes Monatsfoto kurz hintereinander, so sieht man '+esc(first())+' wachsen. Dafür braucht es mindestens zwei Monatsfotos.':'Alle '+np+' Monatsfotos hintereinander, so sieht man '+esc(first())+' wachsen.'):'Aus '+S.mem.length+' Momenten automatisch zusammengestellt.')+'</p>'
    +'<div class="stage" id="stage" data-state="idle"><div class="fp" id="fp"></div><div id="scene"></div>'
    +'<button class="bigplay" id="bigplay" data-act="film-toggle"><span>'+ic('play',30)+'</span><b id="bigtxt">Film starten</b></button></div>'
    +'<div class="ctrl"><button class="pbtn" id="fbtn" data-act="film-toggle" aria-label="Abspielen">'+ic('play',24)+'</button>'
    +'<div class="scrub"><input type="range" id="fscrub" min="0" max="'+F.total+'" step="50" value="0" aria-label="Position im Film"><div class="tl"><span id="ftime">0:00</span><span>'+mmss(F.total)+'</span></div></div></div>'
    +'<div class="opts"><button class="ghost" id="fspeed" data-act="film-speed">Tempo '+F.speed+'×</button><button class="ghost" data-act="film-seek" data-t="0">'+ic('redo',16)+'Von vorn</button><button class="ghost main" data-act="export">'+ic('down',16)+'Als Video speichern</button></div>'
    +'<p class="label">Musik</p><div class="chips" id="fmusic" style="flex-wrap:wrap">'+musicChips()+'</div><input class="vh" type="file" id="m-file" accept="audio/*">'
-   +'<p class="label">Kapitel</p><div class="chips" id="fchap">'+chap+'</div>'
+   +(tl?'':'<p class="label">Kapitel</p><div class="chips" id="fchap">'+chap+'</div>')
    +'<p class="note">„Als Video speichern“ nimmt den Film direkt in deinem Browser auf und lädt ihn als Videodatei herunter. Das dauert so lange wie der Film (bei Tempo 2× halb so lange). Lass das Fenster dabei offen und im Vordergrund.</p>';
 }
 function filmMount(){F.idx=-1;filmUpdate();filmCtrl()}
@@ -773,10 +799,15 @@ function drawCoverCanvas(ctx,W,H,m,img){
 }
 function drawFrame(ctx,W,H,t,imgs){
   var i=0;for(var k=0;k<F.sc.length;k++){if(F.sc[k].t0<=t)i=k;else break}
-  var s=F.sc[i],local=t-s.t0,p=Math.min(local/s.d,1),alpha=Math.min(1,local/(450*F.speed));
+  var s=F.sc[i],local=t-s.t0,p=Math.min(local/s.d,1),alpha=s.k==='tl'?1:Math.min(1,local/(450*F.speed));
   ctx.fillStyle='#12142A';ctx.fillRect(0,0,W,H);
   var u=W/400;
-  if(s.k==='mem'){
+  if(s.k==='tl'){
+    drawCoverCanvas(ctx,W,H,s.m,imgs[s.m.id]);
+    var g2=ctx.createLinearGradient(0,H*.7,0,H);g2.addColorStop(0,'rgba(10,11,25,0)');g2.addColorStop(1,'rgba(10,11,25,.85)');ctx.fillStyle=g2;ctx.fillRect(0,H*.7,W,H*.3);
+    ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillStyle='#fff';ctx.font='700 '+(28.8*u)+'px '+FD;setLS(ctx,-.86*u);ctx.fillText(s.n===0?'Geburt':ageLabelM(s.n),22*u,H-46*u);setLS(ctx,0);
+    ctx.font=(14.4*u)+'px '+FB;ctx.fillStyle='#D5D6EA';ctx.fillText(fmtShort(s.m.date),22*u,H-24*u);
+  }else if(s.k==='mem'){
     var m=s.m,sc=1+.09*(1-Math.pow(1-p,2));
     ctx.save();ctx.globalAlpha=alpha;ctx.translate(W/2,H/2);ctx.scale(sc,sc);ctx.translate(-W/2,-H/2);
     drawCoverCanvas(ctx,W,H,m,imgs[m.id]);ctx.restore();
@@ -798,7 +829,9 @@ function drawFrame(ctx,W,H,t,imgs){
     var ld={font:(18.4*u)+'px '+FB,color:'#F4F2FF',lh:26*u,gap:10*u};
     var sb={font:(15*u)+'px '+FB,color:'#B9BAD6',lh:22*u,gap:6*u};
     function mk(o,txt){var c={};for(var q in o)c[q]=o[q];c.text=txt;return c}
-    if(s.k==='title')it=[mk(eb,'Momenli Film'),mk(h2,first()),mk(ld,filmLead()),mk(sb,fmtDate(BIRTH)+' bis '+fmtDate(TODAY))];
+    if(s.k==='tltitle')it=[mk(eb,'Aufwachsen im Zeitraffer'),mk(h2,first()),mk(ld,s.n+' Monatsfotos'),mk(sb,fmtDate(BIRTH)+' bis '+fmtDate(TODAY))];
+    else if(s.k==='tlend')it=[mk(eb,'Abspann'),mk(h2,ageText(TODAY))].concat(growthLine()?[mk(ld,growthLine())]:[]).concat([mk(sb,'Jeder Moment zählt.')]);
+    else if(s.k==='title')it=[mk(eb,'Momenli Film'),mk(h2,first()),mk(ld,filmLead()),mk(sb,fmtDate(BIRTH)+' bis '+fmtDate(TODAY))];
     else if(s.k==='chapter')it=[mk(eb,s.range),mk(h2,s.name),mk(sb,s.n+' '+(s.n===1?'Moment':'Momente'))];
     else if(s.k==='letter'){var qt={font:'700 '+(22*u)+'px '+FD,color:'#F4F2FF',lh:29*u,gap:14*u};
       it=[mk(eb,'Brief zum '+s.y+'. Geburtstag'),mk(qt,s.L.text?'„'+excerpt(s.L.text,260)+'“':'Eine Sprachnachricht'+(s.L.dur?' · '+mmss(s.L.dur*1000):'')),mk(sb,'Von '+(s.L.from||'Mama und Papa'))]}
@@ -831,7 +864,7 @@ async function exportFilm(){
   openSheet(exportSheet());
   try{if(document.fonts){await Promise.all([document.fonts.load('700 40px "Bricolage Grotesque"'),document.fonts.load('400 20px Figtree'),document.fonts.load('600 20px Figtree')])}}catch(e){}
   var imgs={};
-  for(var i=0;i<F.sc.length;i++){var s=F.sc[i];if(s.k==='mem'&&s.m.img)imgs[s.m.id]=await loadImg(s.m.img);if(s.k==='montage')for(var mi=0;mi<s.items.length;mi++)if(s.items[mi].img&&!imgs[s.items[mi].id])imgs[s.items[mi].id]=await loadImg(s.items[mi].img)}
+  for(var i=0;i<F.sc.length;i++){var s=F.sc[i];if((s.k==='mem'||s.k==='tl')&&s.m.img&&!imgs[s.m.id])imgs[s.m.id]=await loadImg(s.m.img);if(s.k==='montage')for(var mi=0;mi<s.items.length;mi++)if(s.items[mi].img&&!imgs[s.items[mi].id])imgs[s.items[mi].id]=await loadImg(s.items[mi].img)}
   if(!X||X.cancel)return;
   drawFrame(ctx,W,H,0,imgs);
   var stream=cv.captureStream(30),dest=null;
@@ -845,7 +878,7 @@ async function exportFilm(){
     stream.getTracks().forEach(function(tr){if(tr.kind==='video')tr.stop()});
     if(!X||X.cancel){X=null;return}
     var type=(rec.mimeType||mime||'video/webm').split(';')[0],ext=type.indexOf('mp4')>=0?'mp4':'webm';
-    var blob=new Blob(chunks,{type:type}),name='Momenli_Film_'+first().replace(/[^\wäöüÄÖÜß-]+/g,'_')+'_'+iso(TODAY)+'.'+ext;
+    var blob=new Blob(chunks,{type:type}),name=(F.mode==='tl'?'Momenli_Zeitraffer_':'Momenli_Film_')+first().replace(/[^\wäöüÄÖÜß-]+/g,'_')+'_'+iso(TODAY)+'.'+ext;
     download(blob,name);X=null;
     $('xmsg').innerHTML='Fertig. Die Datei <b>'+esc(name)+'</b> ('+(blob.size/1048576).toLocaleString('de-DE',{maximumFractionDigits:1})+' MB) liegt in deinem Download-Ordner.'+(ext==='webm'?' WebM-Dateien spielen Chrome, Edge, Firefox und VLC ab.':'');
     $('xprog').value=100;$('xpct').textContent='100 %';
@@ -909,7 +942,17 @@ function ageYears(d){return Math.floor(ageMonths(d)/12)}
 function yrs(n){return n===1?'1 Jahr':n+' Jahren'}
 function days(n){return n===1?'1 Tag':n+' Tagen'}
 function ritMem(tag){for(var i=0;i<S.mem.length;i++)if(S.mem[i].rit===tag)return S.mem[i];return null}
-function ritLabel(tag){var p=(tag||'').split('-');if(p[0]==='monat')return p[1]==='0'?'Neugeborenenfoto':'Monatsfoto '+p[1]+(p[1]==='1'?' Monat':' Monate');if(p[0]==='geb')return 'Geburtstagsfoto '+p[1]+'. Geburtstag';return ''}
+function monthlyOn(){return R().monthly!==false}
+function mMax(){return monthlyOn()?216:12}
+function ageLabelM(n){if(n<12)return n===1?'1 Monat':n+' Monate';var y=Math.floor(n/12),r=n%12,ys=y===1?'1 Jahr':y+' Jahre';return r?ys+', '+(r===1?'1 Monat':r+' Monate'):ys}
+function shortM(n){if(n===0)return 'Geburt';if(n<=12)return n+(n===1?' Monat':' Monate');var y=Math.floor(n/12),r=n%12;return r?y+' J. '+r+' M.':y+(y===1?' Jahr':' Jahre')}
+function monthNo(tag){var p=(tag||'').split('-');return p[0]==='monat'?+p[1]:-1}
+function ghostFor(tag){
+  var p=(tag||'').split('-'),n=+p[1],best=null,bn=-1;
+  S.mem.forEach(function(m){if(!m.img||!m.rit)return;var q=m.rit.split('-');if(q[0]!==p[0])return;var k=+q[1];if(k<n&&k>bn){bn=k;best=m}});
+  return best?best.img:null;
+}
+function ritLabel(tag){var p=(tag||'').split('-');if(p[0]==='monat')return p[1]==='0'?'Neugeborenenfoto':'Monatsfoto '+ageLabelM(+p[1]);if(p[0]==='geb')return 'Geburtstagsfoto '+p[1]+'. Geburtstag';return ''}
 function num(v){v=String(v||'').replace(',','.').replace(/[^\d.]/g,'');var n=parseFloat(v);return isFinite(n)?n:null}
 function fmtNum(n,d){return n==null?'':n.toLocaleString('de-DE',{maximumFractionDigits:d==null?1:d})}
 function maxYear(){return Math.max(1,ageYears(TODAY)+1)}
@@ -924,10 +967,10 @@ function sampleRit(){
 /* Was steht an? */
 function dueItems(){
   var out=[],r=R(),mo=ageMonths(TODAY),y=ageYears(TODAY);
-  if(mo<=12){
+  if(mo<=mMax()){
     var m=mo,tag='monat-'+m;
-    if(!ritMem(tag))out.push({t:(m===0?'Neugeborenenfoto':'Monatsfoto '+m+(m===1?' Monat':' Monate')),s:'Fällig seit '+fmtShort(addMonths(BIRTH,m)),act:'rit-photo',v:tag});
-    else if(mo<12){var nd=addMonths(BIRTH,m+1),dd=Math.round((nd-TODAY)/DAY);out.push({t:'Nächstes Monatsfoto',s:'In '+days(dd)+', am '+fmtShort(nd),act:'',v:'',soon:true})}
+    if(!ritMem(tag))out.push({t:ritLabel(tag),s:'Fällig seit '+fmtShort(addMonths(BIRTH,m)),act:'rit-photo',v:tag});
+    else if(mo<mMax()){var nd=addMonths(BIRTH,m+1),dd=Math.round((nd-TODAY)/DAY);out.push({t:'Nächstes Monatsfoto',s:'In '+days(dd)+', am '+fmtShort(nd),act:'',v:'',soon:true})}
   }
   var nb=bday(y+1),dn=Math.round((nb-TODAY)/DAY);
   if(dn<=60)out.push({t:(y+1)+'. Geburtstag in '+days(dn),s:'Brief schreiben, Mini-Interview, Geburtstagsfoto',act:'rit-year',v:String(y+1)});
@@ -1001,9 +1044,15 @@ function ritHTML(){
   }else out+='<p class="tag">Noch keine Messung. Die Werte aus dem gelben U-Heft lassen sich gut nachtragen.</p>';
   out+='<button class="dash" data-act="msr-open">'+ic('plus',18)+'Messung eintragen</button>';
   /* Monatsfotos */
-  var mo=ageMonths(TODAY),sl='';
-  for(var j=0;j<=12;j++){if(j>mo+1)break;sl+=slotHTML('monat-'+j,j===0?'Geburt':j+(j===1?' Monat':' Monate'))}
-  out+='<h2 class="h2">Monatsfotos im ersten Jahr</h2><p class="tag" style="margin:-6px 0 10px">Am besten immer am selben Ort, zum Beispiel auf derselben Decke neben demselben Kuscheltier.</p><div class="slots">'+sl+'</div>';
+  var mo=ageMonths(TODAY),maxM=Math.min(mMax(),mo+1),G=maxM<=12?0:Math.ceil((maxM-12)/12),nPh=0;
+  out+='<h2 class="h2">Monatsfotos</h2><p class="tag" style="margin:-6px 0 10px">Jeden Monat ein Foto, immer am selben Ort und mit demselben Abstand. Beim Aufnehmen mit der Kamera liegt das letzte Monatsfoto als Vorlage darüber. Verpasste Monate sind kein Problem.</p>'
+   +'<label class="tog"><input type="checkbox" id="m-on"'+(monthlyOn()?' checked':'')+'><span>Nach dem ersten Jahr weitermachen, bis zum 18. Geburtstag</span></label>';
+  for(var g=0;g<=G;g++){
+    var a0=g===0?0:12*g+1,a1=g===0?12:12*g+12,sl='',dn=0,tot=0;
+    for(var j=a0;j<=a1&&j<=maxM;j++){tot++;if(ritMem('monat-'+j)){dn++;nPh++}sl+=slotHTML('monat-'+j,shortM(j))}
+    out+='<details class="mgroup"'+(g===G?' open':'')+'><summary>'+(g===0?'Erstes Jahr':(g+1)+'. Lebensjahr')+'<span>'+dn+' von '+tot+'</span></summary><div class="slots">'+sl+'</div></details>';
+  }
+  out+='<button class="ghost" style="margin-top:10px" data-act="film-tl">'+ic('film',16)+'Aufwachsen im Zeitraffer ansehen</button>';
   var gs='';for(var g=1;g<=my;g++)gs+=slotHTML('geb-'+g,g+'. Geburtstag');
   out+='<h2 class="h2">Geburtstagsfotos</h2><div class="slots">'+gs+'</div>';
   out+='<p class="note">Briefe, Interviews, Monatsfotos und das Größenwachstum erscheinen automatisch im Momenli Film.</p>';
@@ -1099,7 +1148,7 @@ function icsFile(){
   }
   var y=ageYears(TODAY),mo=ageMonths(TODAY);
   if(y<18)E('geburtstag',bday(y+1),n+' hat Geburtstag: Momenli-Rituale','Brief oder Sprachnachricht an '+n+' schreiben, Mini-Interview führen, Geburtstagsfoto am gewohnten Ort machen, Größe und Gewicht messen. Alles in Momenli unter Rituale.','FREQ=YEARLY;COUNT='+(18-y),['-P7D','PT9H']);
-  if(mo<12)E('monatsfoto',addMonths(BIRTH,mo+1),'Monatsfoto von '+n,'Monatsfoto am gewohnten Ort machen und in Momenli unter Rituale speichern.','FREQ=MONTHLY;COUNT='+(12-mo),['PT9H']);
+  if(mo<mMax())E('monatsfoto',addMonths(BIRTH,mo+1),'Monatsfoto von '+n,'Monatsfoto am gewohnten Ort machen, mit der Kamera in Momenli liegt das letzte Foto als Vorlage darüber. Unter Rituale speichern.','FREQ=MONTHLY;COUNT='+(mMax()-mo),['PT9H']);
   var a=Math.floor(mo/2)*2+2;if(a<12){E('messen-baby',addMonths(BIRTH,a),'Größe und Gewicht von '+n+' messen','Im ersten Jahr alle zwei Monate. In Momenli unter Rituale eintragen.','FREQ=MONTHLY;INTERVAL=2;COUNT='+Math.max(1,Math.floor((12-a)/2)),['PT9H'])}
   if(mo<35){var b=Math.max(16,Math.floor(mo/4)*4+4);if(b<36)E('messen-klein',addMonths(BIRTH,b),'Größe und Gewicht von '+n+' messen','Bis zum 3. Geburtstag alle vier Monate, danach einmal im Jahr zum Geburtstag. In Momenli unter Rituale eintragen.','FREQ=MONTHLY;INTERVAL=4;COUNT='+Math.ceil((36-b)/4),['PT9H'])}
   return 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Momenli//DE\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:Momenli '+icsEsc(n)+'\r\n'+ev.join('\r\n')+'\r\nEND:VCALENDAR\r\n';
@@ -1147,6 +1196,7 @@ function setTab(t){S.tab=t;render();window.scrollTo(0,0)}
 function openSheet(html){$('sheet').innerHTML=html;$('sheet').hidden=false;$('scrim').hidden=false;document.body.classList.add('lock');var f=$('sheet').querySelector('[data-focus]');if(f)f.focus()}
 function closeSheet(){
   if(X)exportCancel();
+  camStop();
   recStop(true);
   $('sheet').hidden=true;$('scrim').hidden=true;document.body.classList.remove('lock');$('sheet').innerHTML='';
 }
@@ -1176,7 +1226,7 @@ function detailHTML(m){
 function newAdd(t,rit){return {type:t||'f',img:null,blob:null,file:'',dur:0,busy:false,rit:rit||''}}
 function ritOptions(sel){
   var o='<option value="">Kein wiederkehrendes Foto</option>',mo=ageMonths(TODAY),y=maxYear();
-  for(var j=0;j<=Math.min(12,mo+1);j++){var t='monat-'+j;if(!ritMem(t)||t===sel)o+='<option value="'+t+'"'+(t===sel?' selected':'')+'>'+ritLabel(t)+'</option>'}
+  for(var j=Math.max(0,Math.min(mo,mMax())-11);j<=Math.min(mMax(),mo+1);j++){var t='monat-'+j;if(!ritMem(t)||t===sel)o+='<option value="'+t+'"'+(t===sel?' selected':'')+'>'+ritLabel(t)+'</option>'}
   for(var g=1;g<=y;g++){var t2='geb-'+g;if(!ritMem(t2)||t2===sel)o+='<option value="'+t2+'"'+(t2===sel?' selected':'')+'>'+ritLabel(t2)+'</option>'}
   return o;
 }
@@ -1193,9 +1243,36 @@ function capHTML(){
   if(t==='s'){
     out+=recRow('add');
   }
+  if(t==='f'&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+    var gh=A.rit?ghostFor(A.rit):null;
+    out+='<button class="ghost" style="margin-top:8px" data-act="cam-open">'+ic('camera',16)+(gh?'Kamera mit Vorlage öffnen':'Kamera öffnen')+'</button>';
+  }
   return out;
 }
-function refreshCap(){var c=$('cap');if(c)c.innerHTML=capHTML()}
+function refreshCap(){if(CAM)return;var c=$('cap');if(c)c.innerHTML=capHTML()}
+var CAM=null;
+async function camOpen(facing){
+  camStop();
+  try{
+    var st=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing||'environment',width:{ideal:1920},height:{ideal:1440}},audio:false});
+    CAM={st:st,facing:facing||'environment'};
+    var gh=S.add.rit?ghostFor(S.add.rit):null;
+    $('cap').innerHTML='<div class="cam"><video id="cam-v" playsinline autoplay muted></video>'+(gh?'<img id="cam-g" src="'+gh+'" alt="" style="opacity:.35">':'')+'</div>'
+     +(gh?'<label class="small" style="display:flex;gap:10px;align-items:center;margin-top:8px">Vorlage<input type="range" id="cam-o" min="0" max="80" value="35" style="flex:1;accent-color:var(--accent)"></label><p class="small" style="margin-top:4px">Richte das Bild so aus, dass es zum letzten Foto passt: gleicher Ort, gleicher Abstand, gleiche Höhe.</p>':'')
+     +'<div class="btns"><button class="ghost main" data-act="cam-shot">'+ic('camera',16)+'Foto aufnehmen</button><button class="ghost" data-act="cam-flip">Kamera wechseln</button><button class="ghost" data-act="cam-cancel">Abbrechen</button></div>';
+    var v=$('cam-v');v.srcObject=st;v.play().catch(function(){});
+  }catch(e){CAM=null;toast('Kein Zugriff auf die Kamera. Du kannst ein Foto auswählen.');refreshCap()}
+}
+function camStop(){if(CAM){CAM.st.getTracks().forEach(function(t){t.stop()});CAM=null}}
+function camShot(){
+  var v=$('cam-v');if(!v||!v.videoWidth)return;
+  var vw=v.videoWidth,vh=v.videoHeight,r=3/4,cw,ch;/* wie angezeigt auf 3:4 zuschneiden */
+  if(vw/vh>r){ch=vh;cw=vh*r}else{cw=vw;ch=vw/r}
+  var sc=Math.min(1,1280/ch),c=document.createElement('canvas');c.width=Math.round(cw*sc);c.height=Math.round(ch*sc);
+  var ctx=c.getContext('2d');if(CAM&&CAM.facing==='user'){ctx.translate(c.width,0);ctx.scale(-1,1)}
+  ctx.drawImage(v,(vw-cw)/2,(vh-ch)/2,cw,ch,0,0,c.width,c.height);
+  S.add.img=c.toDataURL('image/jpeg',.85);S.add.file='';camStop();refreshCap();
+}
 function addHTML(){
   var pend=S.ms.filter(function(m){return !memOf(m.id)}).map(function(m){return '<option value="'+m.id+'">'+esc(m.label)+'</option>'}).join('');
   var seg=[['f','Foto'],['v','Video'],['s','Sprache']].map(function(x){return '<button class="segb" data-act="add-type" data-type="'+x[0]+'" aria-pressed="'+(S.add.type===x[0])+'">'+ic(typeIcon(x[0]),22)+x[1]+'</button>'}).join('');
@@ -1326,7 +1403,13 @@ document.addEventListener('click',function(e){
   else if(a==='open'){var m=memById(id);if(m)openSheet(detailHTML(m))}
   else if(a==='close')closeSheet();
   else if(a==='add'){S.add=newAdd('f');openSheet(addHTML())}
-  else if(a==='add-type'){recStop(true);S.add=newAdd(b.getAttribute('data-type'));var sg=document.querySelectorAll('.segb');for(var i=0;i<sg.length;i++)sg[i].setAttribute('aria-pressed',sg[i]===b);refreshCap()}
+  else if(a==='cam-open')camOpen('environment');
+  else if(a==='cam-flip')camOpen(CAM&&CAM.facing==='environment'?'user':'environment');
+  else if(a==='cam-shot')camShot();
+  else if(a==='cam-cancel'){camStop();refreshCap()}
+  else if(a==='film-tl'){S.filmMode='tl';setTab('film')}
+  else if(a==='film-mode'){S.filmMode=b.getAttribute('data-v');render()}
+  else if(a==='add-type'){recStop(true);camStop();S.add=newAdd(b.getAttribute('data-type'));var sg=document.querySelectorAll('.segb');for(var i=0;i<sg.length;i++)sg[i].setAttribute('aria-pressed',sg[i]===b);refreshCap()}
   else if(a==='rec')recToggle(b.getAttribute('data-for'));
   else if(a==='rit-photo'){var tg=b.getAttribute('data-v');closeSheet();S.add=newAdd('f',tg);openSheet(addHTML())}
   else if(a==='rit-year'){S.ritYear=+b.getAttribute('data-v');if(S.tab!=='rit'){S.tab='rit'}render();var rb=$('rit-bday');if(rb)rb.scrollIntoView({block:'start'})}
@@ -1396,11 +1479,13 @@ document.addEventListener('click',function(e){
 document.addEventListener('input',function(e){
   var t=e.target;
   if(t.id==='fscrub')filmSeek(t.value);
+  else if(t.id==='cam-o'){var cg=$('cam-g');if(cg)cg.style.opacity=t.value/100}
   else if(t.hasAttribute&&t.hasAttribute('data-pf')&&t.type!=='date'){S.profile[t.getAttribute('data-pf')]=t.value;save()}
 });
 document.addEventListener('change',function(e){
   var t=e.target;
-  if(t.id==='a-rit'){var ti=$('a-title');if(ti&&(!ti.value.trim()||/^(Monatsfoto|Neugeborenenfoto|Geburtstagsfoto)/.test(ti.value)))ti.value=t.value?ritLabel(t.value):'';if(t.value)$('a-date').value=ritDefaultDate(t.value);return}
+  if(t.id==='m-on'){R().monthly=t.checked;save();render();toast(t.checked?'Monatsfotos laufen bis zum 18. Geburtstag weiter':'Monatsfotos nur im ersten Jahr');return}
+  if(t.id==='a-rit'){if(S.add)S.add.rit=t.value;refreshCap();var ti=$('a-title');if(ti&&(!ti.value.trim()||/^(Monatsfoto|Neugeborenenfoto|Geburtstagsfoto)/.test(ti.value)))ti.value=t.value?ritLabel(t.value):'';if(t.value)$('a-date').value=ritDefaultDate(t.value);return}
   if(t.getAttribute&&t.getAttribute('data-pf')==='geb'){if(parseISO(t.value)){S.profile.geb=t.value;setBirth();save();render()}return}
   if(t.getAttribute&&t.hasAttribute('data-pf'))return;
   if(!t.files||!t.files[0])return;
