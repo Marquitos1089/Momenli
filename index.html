@@ -233,6 +233,7 @@ details.msr summary{cursor:pointer;color:var(--accent);font:600 .85rem var(--fon
 .chip.past{color:var(--muted);opacity:.6;border-style:dashed}
 .chip.past[aria-pressed="true"]{opacity:1;border-style:solid}
 .chip.now:not([aria-pressed="true"]){border-color:var(--accent);color:var(--accent)}
+.tabs[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -1113,6 +1114,16 @@ function growthLine(){var ms=R().measures.filter(function(x){return x.cm!=null})
 function ivPairs(I,max,Y){var qs=ivQs(Y,I),out=[];qs.forEach(function(q){if(out.length<max&&I.answers[q[0]])out.push([qText(q,Y),I.answers[q[0]]])});return out}
 function excerpt(t,n){t=String(t||'');return t.length>n?t.slice(0,n).replace(/\s+\S*$/,'')+' …':t}
 
+/* ---------- Erster Start ---------- */
+function welcomeHTML(){
+  return '<div class="top"><span class="brand">momenli<i>.</i></span><span class="tag">Jeder Moment zählt</span></div>'
+   +'<h1>Willkommen</h1><p class="lede">Momenli sammelt Fotos, Videos, Sprachnachrichten und Meilensteine deines Kindes an einem Ort und macht daraus einen Film.</p>'
+   +'<div class="card pad" style="margin-top:22px"><label class="fl" for="w-name" style="margin-top:0">Wie heißt dein Kind?</label><input class="fld" id="w-name" autocomplete="off" placeholder="Vorname">'
+   +'<label class="fl" for="w-geb">Geburtstag</label><input class="fld" type="date" id="w-geb" max="'+iso(TODAY)+'">'
+   +'<p class="err" id="w-err" hidden></p><button class="primary" data-act="welcome-go">Los geht’s</button></div>'
+   +'<p class="note">Alles, was du einträgst, bleibt nur auf diesem Gerät. Nichts wird ins Internet geschickt. Weitere Kinder und alle Angaben kannst du später im Steckbrief ergänzen.</p>'
+   +'<button class="ghost" style="margin-top:14px" data-act="welcome-sample">Erst mit Beispieldaten ansehen</button>';
+}
 /* ---------- Grundgerüst ---------- */
 function tabsHTML(){
   var T=[['home','heart','Momente'],['ms','award','Meilensteine'],['rit','repeat','Rituale'],['profile','book','Steckbrief'],['film','film','Film']],dc=dueCount();
@@ -1122,7 +1133,8 @@ function tabsHTML(){
 }
 function render(){
   filmStop();
-  var v={home:homeHTML,ms:msHTML,rit:ritHTML,profile:profileHTML,film:filmHTML}[S.tab];
+  $('tabs').hidden=S.tab==='welcome';
+  var v={welcome:welcomeHTML,home:homeHTML,ms:msHTML,rit:ritHTML,profile:profileHTML,film:filmHTML}[S.tab];
   $('view').innerHTML=v();$('tabs').innerHTML=tabsHTML();
   if(S.tab==='film')filmMount();
   if(S.tab==='profile')showUsage();
@@ -1288,9 +1300,9 @@ async function resetAll(sample){
   revokeAll();try{await dbClear()}catch(e){}
   if(custom.el){custom.el.pause();custom.el=null;custom.src=null}
   S.music='spieluhr';S.musicName='';
-  if(sample){loadSample();S.tab='home'}else{loadEmpty();S.tab='profile'}
+  if(sample){loadSample();S.tab='home'}else{loadEmpty();S.tab='welcome'}
   save();render();window.scrollTo(0,0);
-  toast(sample?'Beispieldaten geladen':'Alles gelöscht. Trag jetzt Name und Geburtstag ein.');
+  toast(sample?'Beispieldaten geladen':'Alles gelöscht');
 }
 
 /* ---------- Ereignisse ---------- */
@@ -1366,6 +1378,13 @@ document.addEventListener('click',function(e){
     S.kids=S.kids.filter(function(k){return k!==gone});S.cur=S.kids[0].kid;var k0=S.kids[0];
     S.profile=k0.profile;S.mem=k0.mem;S.ms=k0.ms;S.sample=k0.sample;setBirth();save();setTab('home');toast('Entfernt');
   }
+  else if(a==='welcome-go'){
+    var wn=$('w-name').value.trim(),wg=$('w-geb').value,we=$('w-err');
+    if(!wn){we.textContent='Bitte gib einen Namen ein.';we.hidden=false;$('w-name').focus();return}
+    if(!parseISO(wg)){we.textContent='Bitte wähle den Geburtstag aus.';we.hidden=false;$('w-geb').focus();return}
+    S.profile.name=wn;S.profile.geb=wg;setBirth();S.tab='home';save();render();window.scrollTo(0,0);toast('Schön, dass ihr da seid! Mit dem Plus legst du den ersten Moment an.');
+  }
+  else if(a==='welcome-sample')resetAll(true);
   else if(a==='backup')backup();
   else if(a==='sample')resetAll(true);
   else if(a==='fresh')resetAll(false);
@@ -1406,7 +1425,7 @@ if(/^https?:$/.test(location.protocol)){
   var st=null;
   try{st=await dbGet('state')}catch(e){}
   if(st&&(st.mem||st.kids)){applySnap(st);await loadMediaUrls()}
-  else{loadSample();save()}
+  else{loadEmpty();S.tab='welcome'}
   if(DB&&navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});
   render();
   if(!DB)toast('Hinweis: Dieser Browser speichert hier nicht dauerhaft.');
