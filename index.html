@@ -1424,7 +1424,8 @@ if(/^https?:$/.test(location.protocol)){
   try{DB=await dbOpen()}catch(e){DB=null}
   var st=null;
   try{st=await dbGet('state')}catch(e){}
-  if(st&&(st.mem||st.kids)){applySnap(st);await loadMediaUrls()}
+  if(st&&(st.mem||st.kids)){applySnap(st);await loadMediaUrls();
+    if(S.kids.length===1&&!S.mem.length&&!(S.profile.name||'').trim())S.tab='welcome'}
   else{loadEmpty();S.tab='welcome'}
   if(DB&&navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});
   render();
