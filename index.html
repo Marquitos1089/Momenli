@@ -1088,18 +1088,21 @@ function msrSave(){
 function icsDate(d){return iso(d).replace(/-/g,'')}
 function icsEsc(s){return String(s).replace(/[\\,;]/g,function(c){return '\\'+c}).replace(/\n/g,'\\n')}
 function icsFile(){
-  var n=first(),ev=[],stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z'),uid=0;
-  function E(d,title,desc,rrule,alarmDays){
-    ev.push(['BEGIN:VEVENT','UID:momenli-'+S.cur+'-'+(uid++)+'-'+icsDate(d)+'@momenli','DTSTAMP:'+stamp,'DTSTART;VALUE=DATE:'+icsDate(d),'DTEND;VALUE=DATE:'+icsDate(new Date(d.getTime()+DAY*1.5)),
-      'SUMMARY:'+icsEsc(title),'DESCRIPTION:'+icsEsc(desc)].concat(rrule?['RRULE:'+rrule]:[])
-      .concat(alarmDays?['BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(title),'TRIGGER:-P'+alarmDays+'D','END:VALARM']:['BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(title),'TRIGGER:PT9H','END:VALARM']).concat(['END:VEVENT']).join('\r\n'));
+  /* Einmal laden reicht: alles sind wiederkehrende Termine bis zum 18. Geburtstag.
+     Die UIDs sind fest je Kind und Art, ein erneuter Import aktualisiert die Termine statt sie doppelt anzulegen. */
+  var n=first(),ev=[],stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z');
+  function alarm(title,trig){return ['BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(title),'TRIGGER:'+trig,'END:VALARM']}
+  function E(key,d,title,desc,rrule,alarms){
+    ev.push(['BEGIN:VEVENT','UID:momenli-'+S.cur+'-'+key+'@momenli','DTSTAMP:'+stamp,'DTSTART;VALUE=DATE:'+icsDate(d),'DTEND;VALUE=DATE:'+icsDate(new Date(d.getFullYear(),d.getMonth(),d.getDate()+1)),
+      'SUMMARY:'+icsEsc(title),'DESCRIPTION:'+icsEsc(desc),'TRANSP:TRANSPARENT'].concat(rrule?['RRULE:'+rrule]:[])
+      .concat([].concat.apply([],alarms.map(function(a){return alarm(title,a)}))).concat(['END:VEVENT']).join('\r\n'));
   }
-  var y=ageYears(TODAY);
-  E(bday(y+1),n+' hat Geburtstag: Momenli-Rituale','Brief oder Sprachnachricht an '+n+' schreiben, Mini-Interview führen, Geburtstagsfoto am gewohnten Ort machen, Größe und Gewicht messen.','FREQ=YEARLY',7);
-  var mo=ageMonths(TODAY);
-  for(var m=mo+1;m<=12;m++)E(addMonths(BIRTH,m),'Monatsfoto '+n+': '+m+(m===1?' Monat':' Monate'),'Monatsfoto am gewohnten Ort machen und in Momenli speichern.','',0);
-  E(addMonths(TODAY,mo<12?2:(mo<36?4:12)),'Größe und Gewicht von '+n+' messen','In Momenli unter Rituale eintragen.',mo<12?'FREQ=MONTHLY;INTERVAL=2':(mo<36?'FREQ=MONTHLY;INTERVAL=4':'FREQ=YEARLY'),0);
-  return 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Momenli//DE\r\nCALSCALE:GREGORIAN\r\n'+ev.join('\r\n')+'\r\nEND:VCALENDAR\r\n';
+  var y=ageYears(TODAY),mo=ageMonths(TODAY);
+  if(y<18)E('geburtstag',bday(y+1),n+' hat Geburtstag: Momenli-Rituale','Brief oder Sprachnachricht an '+n+' schreiben, Mini-Interview führen, Geburtstagsfoto am gewohnten Ort machen, Größe und Gewicht messen. Alles in Momenli unter Rituale.','FREQ=YEARLY;COUNT='+(18-y),['-P7D','PT9H']);
+  if(mo<12)E('monatsfoto',addMonths(BIRTH,mo+1),'Monatsfoto von '+n,'Monatsfoto am gewohnten Ort machen und in Momenli unter Rituale speichern.','FREQ=MONTHLY;COUNT='+(12-mo),['PT9H']);
+  var a=Math.floor(mo/2)*2+2;if(a<12){E('messen-baby',addMonths(BIRTH,a),'Größe und Gewicht von '+n+' messen','Im ersten Jahr alle zwei Monate. In Momenli unter Rituale eintragen.','FREQ=MONTHLY;INTERVAL=2;COUNT='+Math.max(1,Math.floor((12-a)/2)),['PT9H'])}
+  if(mo<35){var b=Math.max(16,Math.floor(mo/4)*4+4);if(b<36)E('messen-klein',addMonths(BIRTH,b),'Größe und Gewicht von '+n+' messen','Bis zum 3. Geburtstag alle vier Monate, danach einmal im Jahr zum Geburtstag. In Momenli unter Rituale eintragen.','FREQ=MONTHLY;INTERVAL=4;COUNT='+Math.ceil((36-b)/4),['PT9H'])}
+  return 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Momenli//DE\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:Momenli '+icsEsc(n)+'\r\n'+ev.join('\r\n')+'\r\nEND:VCALENDAR\r\n';
 }
 
 /* Film-Szenen aus den Ritualen */
