@@ -402,9 +402,10 @@ var PF=[['name','Name','Emma Sophie Müller'],['geb','Geboren am','2025-01-15'],
 ['gew','Gewicht','3.450 g'],['gr','Größe','52 cm'],['kopf','Kopfumfang','34 cm'],['blut','Blutgruppe','A positiv'],
 ['haar','Haare','Dunkelbraun'],['aug','Augen','Blau'],['eltern','Eltern','Sarah & Max Müller']];
 
-var S={tab:'home',filter:'alle',msForm:false,add:null,mem:[],ms:[],profile:{},nextId:100,music:'spieluhr',musicName:'',sample:true,kids:[],cur:'',pfEdit:false,filmMode:'leben',ritYear:0,ritQ:'',lt:null,iv:0};
+var S={tab:'home',filter:'alle',msForm:false,add:null,mem:[],ms:[],profile:{},nextId:100,music:'spieluhr',musicName:'',sample:true,kids:[],cur:'',lastId:0,pfEdit:false,filmMode:'leben',ritYear:0,ritQ:'',lt:null,iv:0};
 
 /* ---------- Mehrere Kinder: S.mem, S.ms, S.profile zeigen immer auf das gewählte Kind ---------- */
+function newId(){var n=Date.now()*1000+Math.floor(Math.random()*1000);if(n<=S.lastId)n=S.lastId+1;S.lastId=n;return n}
 function curKid(){for(var i=0;i<S.kids.length;i++)if(S.kids[i].kid===S.cur)return S.kids[i];return S.kids[0]}
 function syncKid(){var k=curKid();if(!k)return;k.profile=S.profile;k.mem=S.mem;k.ms=S.ms;k.sample=S.sample}
 function useKid(id){
@@ -416,7 +417,7 @@ function useKid(id){
 function allMem(){syncKid();var a=[];S.kids.forEach(function(k){a=a.concat(k.mem)});return a}
 function kidName(k){return ((k.profile&&k.profile.name)||'').trim().split(' ')[0]||'Neues Kind'}
 function newKid(){
-  var k={kid:'k'+(S.nextId++),profile:{},mem:[],ms:[],sample:false,rit:emptyRit()};
+  var k={kid:'k'+newId(),profile:{},mem:[],ms:[],sample:false,rit:emptyRit()};
   PF.forEach(function(f){k.profile[f[0]]=''});k.profile.geb=iso(TODAY);
   MS0.forEach(function(r){k.ms.push({id:r[0],label:r[1],when:r[2],custom:false})});
   return k;
@@ -472,13 +473,14 @@ function snapshot(){
   return {v:2,nextId:S.nextId,cur:S.cur,music:S.music,musicName:S.musicName,
     kids:S.kids.map(function(k){return {kid:k.kid,profile:k.profile,ms:k.ms,sample:!!k.sample,
       rit:JSON.parse(JSON.stringify(k.rit||emptyRit(),function(key,v){return key==='url'?undefined:v})),
-      mem:k.mem.map(function(m){return {id:m.id,date:iso(m.date),type:m.type,title:m.title,note:m.note,ms:m.ms,img:m.img,dur:m.dur,auto:m.auto,media:!!m.media,mime:m.mime||'',fname:m.fname||'',rit:m.rit||''}})}})};
+      del:k.del||{},
+      mem:k.mem.map(function(m){return {upd:m.upd||0,id:m.id,date:iso(m.date),type:m.type,title:m.title,note:m.note,ms:m.ms,img:m.img,dur:m.dur,auto:m.auto,media:!!m.media,mime:m.mime||'',fname:m.fname||'',rit:m.rit||''}})}})};
 }
 function applySnap(o){
   S.nextId=o.nextId||100;S.music=o.music||'spieluhr';S.musicName=o.musicName||'';
   var kids=o.kids||[{kid:'k1',profile:o.profile,ms:o.ms,mem:o.mem,sample:o.sample}];/* alte Sicherungen mit einem Kind */
   S.kids=kids.map(function(k){var rt=k.rit||emptyRit();['letters','interviews'].forEach(function(x){rt[x]=rt[x]||{}});rt.measures=rt.measures||[];rt.qs=rt.qs||[];
-    return {kid:k.kid,profile:k.profile||{},ms:k.ms||[],sample:!!k.sample,rit:rt,
+    return {kid:k.kid,profile:k.profile||{},ms:k.ms||[],sample:!!k.sample,rit:rt,del:k.del||{},
     mem:(k.mem||[]).map(function(m){m.date=parseISO(m.date)||TODAY;return m})}});
   S.cur='';S.profile=null;
   var k0=null;for(var i=0;i<S.kids.length;i++)if(S.kids[i].kid===o.cur)k0=S.kids[i];k0=k0||S.kids[0];
@@ -609,7 +611,12 @@ function profileHTML(){
    +'<p class="small" id="usage"></p>'
    +'<div class="btns"><button class="ghost main" data-act="backup">'+ic('down',16)+'Sicherung herunterladen</button>'
    +'<label class="ghost" for="imp" style="cursor:pointer">'+ic('up',16)+'Sicherung einspielen</label><input class="vh" type="file" id="imp" accept=".json,application/json"></div>'
-   +'<p class="small">Lade ab und zu eine Sicherung herunter und lege sie zum Beispiel in deine Cloud. Wenn der Browser-Verlauf gelöscht wird, sind die Daten sonst weg.</p>'
+   +'</div><h2 class="h2">Mit Partner abgleichen</h2><div class="card pad">'
+   +'<p style="margin:0">So erfasst ihr zu zweit: Schick deinem Partner eine Abgleich-Datei, er spielt sie auf seinem Handy ein. Danach schickt er seine Datei zurück. Neue und geänderte Momente kommen dazu, nichts wird überschrieben.</p>'
+   +'<div class="btns"><button class="ghost main" data-act="sync-share">'+ic('up',16)+'Abgleich-Datei senden</button>'
+   +'<label class="ghost" for="sync-in" style="cursor:pointer">'+ic('down',16)+'Datei vom Partner einspielen</label><input class="vh" type="file" id="sync-in" accept=".json,application/json"></div>'
+   +'<p class="small">Mit vielen Videos wird die Datei groß. Dann schickt ihr sie besser per Mail oder Cloud statt per WhatsApp.</p></div><div class="card pad" style="margin-top:10px">'
+   +'<p class="small" style="margin-top:0">Lade ab und zu eine Sicherung herunter und lege sie zum Beispiel in deine Cloud. Wenn der Browser-Verlauf gelöscht wird, sind die Daten sonst weg.</p>'
    +'<div class="btns">'
    +(S.sample?'':'<button class="ghost" data-act="sample" data-confirm="Wirklich? Ersetzt alles">Beispieldaten laden</button>')
    +(S.kids.length>1?'<button class="ghost warn" data-act="kid-del" data-confirm="'+esc(first())+' wirklich entfernen?">'+ic('trash',16)+esc(first())+' entfernen</button>':'')
@@ -1113,12 +1120,12 @@ async function letterSave(){
   if(!txt&&!A.blob&&!L.mediaId){$('lt-err').hidden=false;return}
   L.text=txt;L.from=$('lt-from').value.trim()||'Mama und Papa';L.written=L.written||iso(TODAY);
   if(A.blob){
-    var id=S.nextId++;
+    var id=newId();
     try{await dbPut('media:'+id,A.blob)}catch(e){toast('Die Datei ist zu groß für den Speicher.')}
     if(L.mediaId){dbDel('media:'+L.mediaId).catch(function(){});if(L.url)URL.revokeObjectURL(L.url)}
     L.mediaId=id;L.dur=A.dur||0;L.url=URL.createObjectURL(A.blob);
   }
-  r.letters[A.year]=L;save();closeSheet();render();toast('Brief gespeichert');
+  L.upd=Date.now();r.letters[A.year]=L;save();closeSheet();render();toast('Brief gespeichert');
 }
 function letterDel(Y){var r=R(),L=r.letters[Y];if(!L)return;if(L.mediaId){dbDel('media:'+L.mediaId).catch(function(){});if(L.url)URL.revokeObjectURL(L.url)}delete r.letters[Y];save();closeSheet();render();toast('Brief gelöscht')}
 
@@ -1142,7 +1149,7 @@ function ivSave(){
   var r=R(),Y=S.iv,ans={},raw=ivCollect();
   for(var k in raw){var v=raw[k].trim();if(v)ans[k]=v}
   if(!Object.keys(ans).length){delete r.interviews[Y]}
-  else r.interviews[Y]={written:(r.interviews[Y]||{}).written||iso(TODAY),answers:ans};
+  else r.interviews[Y]={written:(r.interviews[Y]||{}).written||iso(TODAY),answers:ans,upd:Date.now()};
   save();closeSheet();render();toast('Interview gespeichert');
 }
 
@@ -1158,7 +1165,7 @@ function msrHTML(){
 function msrSave(){
   var cm=num($('mr-cm').value),kg=num($('mr-kg').value),hd=num($('mr-head').value),d=$('mr-date').value||iso(TODAY);
   if(cm==null&&kg==null){$('mr-err').hidden=false;return}
-  R().measures.push({id:'m'+(S.nextId++),date:d,cm:cm,kg:kg,head:hd});save();closeSheet();render();toast('Messung gespeichert');
+  R().measures.push({id:'m'+newId(),date:d,cm:cm,kg:kg,head:hd});save();closeSheet();render();toast('Messung gespeichert');
 }
 
 /* Kalender-Erinnerungen (.ics) */
@@ -1225,7 +1232,7 @@ function welcomeHTML(){
    +'<label class="fl" for="w-geb">Geburtstag</label><input class="fld" type="date" id="w-geb" max="'+iso(TODAY)+'">'
    +'<p class="err" id="w-err" hidden></p><button class="primary" data-act="welcome-go">Los geht’s</button></div>'
    +'<p class="note">Alles, was du einträgst, bleibt nur auf diesem Gerät. Nichts wird ins Internet geschickt. Weitere Kinder und alle Angaben kannst du später im Steckbrief ergänzen.</p>'
-   +'<button class="ghost" style="margin-top:14px" data-act="welcome-sample">Erst mit Beispieldaten ansehen</button>';
+   +'<div class="btns" style="margin-top:14px"><label class="ghost" for="w-sync" style="cursor:pointer">'+ic('down',16)+'Dein Partner nutzt Momenli schon? Datei einspielen</label><input class="vh" type="file" id="w-sync" accept=".json,application/json"><button class="ghost" data-act="welcome-sample">Erst mit Beispieldaten ansehen</button></div>';
 }
 /* ---------- Grundgerüst ---------- */
 function tabsHTML(){
@@ -1401,13 +1408,13 @@ async function saveMoment(){
   if(d>TODAY)d=TODAY;
   if(A.edit){
     var em=memById(A.edit);if(!em){closeSheet();return}
-    em.title=title;em.date=d;em.note=$('a-note').value.trim();em.ms=$('a-ms').value;em.rit=$('a-rit').value;em.img=A.img;em.dur=A.dur||em.dur;em.auto=false;
+    em.upd=Date.now();em.title=title;em.date=d;em.note=$('a-note').value.trim();em.ms=$('a-ms').value;em.rit=$('a-rit').value;em.img=A.img;em.dur=A.dur||em.dur;em.auto=false;
     if(A.blob){try{await dbPut('media:'+em.id,A.blob);em.media=!!DB;em.mime=A.blob.type||''}catch(e){toast('Die Datei ist zu groß für den Speicher.')}
       if(em.url)URL.revokeObjectURL(em.url);em.url=URL.createObjectURL(A.blob)}
     save();closeSheet();render();openSheet(detailHTML(em));toast('Änderungen gespeichert');return;
   }
-  var id=S.nextId++;
-  var m={id:id,date:d,type:A.type,title:title,note:$('a-note').value.trim(),ms:$('a-ms').value,img:A.img,dur:A.dur||0,auto:false,media:false,rit:$('a-rit').value};
+  var id=newId();
+  var m={id:id,upd:Date.now(),date:d,type:A.type,title:title,note:$('a-note').value.trim(),ms:$('a-ms').value,img:A.img,dur:A.dur||0,auto:false,media:false,rit:$('a-rit').value};
   if(A.blob){
     try{await dbPut('media:'+id,A.blob);m.media=!!DB;m.mime=A.blob.type||'';}catch(e){toast('Die Datei ist zu groß für den Speicher.');}
     m.url=URL.createObjectURL(A.blob);
@@ -1417,18 +1424,71 @@ async function saveMoment(){
 
 /* ---------- Sicherung ---------- */
 function blobToData(b){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result)};r.onerror=function(){rej(r.error)};r.readAsDataURL(b)})}
-async function backup(){
-  toast('Sicherung wird erstellt …');
-  try{
+function markDel(key){var k=curKid();k.del=k.del||{};k.del[key]=Date.now()}
+async function buildBackup(){
     var media={};
     var am=allMem();
     for(var i=0;i<am.length;i++){var m=am[i];if(m.media){var b=await dbGet('media:'+m.id);if(b)media[m.id]=await blobToData(b)}}
     var al=allLetters();for(var j=0;j<al.length;j++){if(al[j].mediaId){var lb=await dbGet('media:'+al[j].mediaId);if(lb)media[al[j].mediaId]=await blobToData(lb)}}
     var mu=await dbGet('music'),music=mu&&mu.blob?{name:mu.name,data:await blobToData(mu.blob)}:null;
-    var o={app:'momenli',v:1,created:new Date().toISOString(),state:snapshot(),media:media,music:music};
-    download(new Blob([JSON.stringify(o)],{type:'application/json'}),'Momenli_Sicherung_'+iso(new Date())+'.json');
-    toast('Sicherung liegt im Download-Ordner');
-  }catch(e){toast('Sicherung hat nicht geklappt.')}
+    return new Blob([JSON.stringify({app:'momenli',v:1,created:new Date().toISOString(),state:snapshot(),media:media,music:music})],{type:'application/json'});
+}
+async function backup(){
+  toast('Sicherung wird erstellt …');
+  try{download(await buildBackup(),'Momenli_Sicherung_'+iso(new Date())+'.json');toast('Sicherung liegt im Download-Ordner')}
+  catch(e){toast('Sicherung hat nicht geklappt.')}
+}
+async function shareSync(){
+  toast('Datei wird erstellt …');
+  try{
+    var blob=await buildBackup(),name='Momenli_Abgleich_'+first().replace(/[^\wäöüÄÖÜß-]+/g,'_')+'_'+iso(new Date())+'.json';
+    var file=new File([blob],name,{type:'application/json'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:'Momenli abgleichen',text:'Öffne Momenli und spiele diese Datei unter Steckbrief → Mit Partner abgleichen ein.'});toast('Geteilt');return}
+      catch(e){if(e&&e.name==='AbortError')return}
+    }
+    download(blob,name);toast('Datei liegt im Download-Ordner. Schick sie deinem Partner, zum Beispiel per WhatsApp oder Mail.');
+  }catch(e){toast('Das hat nicht geklappt.')}
+}
+function isEmptyLocal(){syncKid();return S.kids.every(function(k){return k.sample||(!k.mem.length&&!(k.profile.name||'').trim())})}
+function newer(a,b){return (a&&a.upd||0)>(b&&b.upd||0)}
+async function mergeFile(file){
+  try{
+    var o=JSON.parse(await file.text());
+    if(!o||o.app!=='momenli'||!o.state)throw new Error('kein Momenli');
+    if(isEmptyLocal()){await restore(file);return}
+    syncKid();
+    var rs=o.state,rkids=rs.kids||[{kid:'k1',profile:rs.profile,ms:rs.ms,mem:rs.mem,sample:rs.sample}],media=o.media||{},need=[],added=0,changed=0,newKids=0;
+    rkids.forEach(function(rk){
+      if(rk.sample)return;
+      var lk=S.kids.filter(function(k){return k.kid===rk.kid})[0];
+      if(!lk){lk={kid:rk.kid,profile:rk.profile||{},mem:[],ms:rk.ms||[],sample:false,rit:rk.rit||emptyRit(),del:rk.del||{}};S.kids.push(lk);newKids++}
+      var del=lk.del=lk.del||{};for(var dk in (rk.del||{}))del[dk]=Math.max(del[dk]||0,rk.del[dk]);
+      if(newer(rk.profile,lk.profile))lk.profile=rk.profile;
+      (rk.ms||[]).forEach(function(m){if(!del['ms:'+m.id]&&!lk.ms.some(function(x){return x.id===m.id}))lk.ms.push(m)});
+      lk.ms=lk.ms.filter(function(m){return !del['ms:'+m.id]});
+      (rk.mem||[]).forEach(function(rm){
+        if(del['mem:'+rm.id])return;
+        var i=-1;for(var q=0;q<lk.mem.length;q++)if(lk.mem[q].id===rm.id)i=q;
+        var nm={};for(var f in rm)nm[f]=rm[f];nm.date=parseISO(rm.date)||TODAY;
+        if(i<0){lk.mem.push(nm);added++;if(rm.media)need.push(rm.id)}
+        else if(newer(rm,lk.mem[i])){if(lk.mem[i].url){nm.url=lk.mem[i].url}lk.mem[i]=nm;changed++;if(rm.media)need.push(rm.id)}
+      });
+      lk.mem=lk.mem.filter(function(m){if(del['mem:'+m.id]){if(m.url)URL.revokeObjectURL(m.url);return false}return true});
+      var rr=rk.rit||emptyRit(),lr=lk.rit=lk.rit||emptyRit();
+      ['letters','interviews'].forEach(function(t){lr[t]=lr[t]||{};for(var y in (rr[t]||{})){if(!lr[t][y]||newer(rr[t][y],lr[t][y])){var keepUrl=lr[t][y]&&lr[t][y].url;lr[t][y]=rr[t][y];if(t==='letters'&&rr[t][y].mediaId){need.push(rr[t][y].mediaId);if(keepUrl)URL.revokeObjectURL(keepUrl)}}}});
+      (rr.measures||[]).forEach(function(x){if(!del['msr:'+x.id]&&!lr.measures.some(function(y){return y.id===x.id}))lr.measures.push(x)});
+      lr.measures=lr.measures.filter(function(x){return !del['msr:'+x.id]});
+      (rr.qs||[]).forEach(function(x){if(!lr.qs.some(function(y){return y.id===x.id}))lr.qs.push(x)});
+    });
+    for(var n=0;n<need.length;n++){var key=need[n];if(media[key]){var b=await (await fetch(media[key])).blob();await dbPut('media:'+key,b);
+      allMem().forEach(function(m){if(String(m.id)===String(key)){if(m.url)URL.revokeObjectURL(m.url);m.url=URL.createObjectURL(b);m.media=true}});
+      allLetters().forEach(function(L){if(String(L.mediaId)===String(key)){L.url=URL.createObjectURL(b)}})}}
+    S.nextId=Math.max(S.nextId,rs.nextId||0);
+    var k0=curKid();S.profile=k0.profile;S.mem=k0.mem;S.ms=k0.ms;S.sample=k0.sample;setBirth();
+    await dbPut('state',snapshot());render();
+    toast(added||changed||newKids?'Abgeglichen: '+added+' neue und '+changed+' geänderte Momente'+(newKids?', '+newKids+(newKids===1?' neues Kind':' neue Kinder'):''):'Alles war schon auf dem gleichen Stand');
+  }catch(e){toast('Diese Datei ist keine gültige Momenli-Datei.')}
 }
 async function restore(file){
   try{
@@ -1484,10 +1544,10 @@ document.addEventListener('click',function(e){
   else if(a==='lt-del')letterDel(S.lt.year);
   else if(a==='iv-open'){openSheet(ivHTML(+b.getAttribute('data-v')))}
   else if(a==='iv-save')ivSave();
-  else if(a==='iv-addq'){var nq=$('iv-newq').value.trim();if(!nq)return;var keep=ivCollect();R().qs.push({id:'q'+(S.nextId++),q:nq});save();$('sheet').innerHTML=ivHTML(S.iv,keep);toast('Frage hinzugefügt, sie kommt jetzt jedes Jahr')}
+  else if(a==='iv-addq'){var nq=$('iv-newq').value.trim();if(!nq)return;var keep=ivCollect();R().qs.push({id:'q'+newId(),q:nq});save();$('sheet').innerHTML=ivHTML(S.iv,keep);toast('Frage hinzugefügt, sie kommt jetzt jedes Jahr')}
   else if(a==='msr-open')openSheet(msrHTML());
   else if(a==='msr-save')msrSave();
-  else if(a==='msr-del'){var mid=b.getAttribute('data-v');R().measures=R().measures.filter(function(x){return x.id!==mid});save();render()}
+  else if(a==='msr-del'){var mid=b.getAttribute('data-v');R().measures=R().measures.filter(function(x){return x.id!==mid});markDel('msr:'+mid);save();render()}
   else if(a==='ics'){download(new Blob([icsFile()],{type:'text/calendar'}),'Momenli_Erinnerungen_'+first()+'.ics');toast('Kalenderdatei geladen. Öffne sie, um die Termine zu übernehmen.')}
   else if(a==='save')saveMoment();
   else if(a==='ms-moment'){closeSheet();S.add=newAdd('f','',id);openSheet(addHTML())}
@@ -1497,7 +1557,7 @@ document.addEventListener('click',function(e){
   else if(a==='pf-save'){
     var ng=$('pf-geb').value;if(!parseISO(ng)){toast('Bitte wähle einen gültigen Geburtstag.');return}
     PF.forEach(function(f){var el=$('pf-'+f[0]);if(el)S.profile[f[0]]=el.value.trim()});
-    setBirth();S.pfEdit=false;save();render();toast('Steckbrief gespeichert');
+    S.profile.upd=Date.now();setBirth();S.pfEdit=false;save();render();toast('Steckbrief gespeichert');
   }
   else if(a==='tour'){tourOpen(0)}
   else if(a==='tour-next'){tourOpen(TOUR.i+1)}
@@ -1506,18 +1566,18 @@ document.addEventListener('click',function(e){
   else if(a==='mem-del'){
     var dm=memById(id);if(!dm)return;
     if(dm.url)URL.revokeObjectURL(dm.url);
-    S.mem=S.mem.filter(function(x){return x!==dm});dbDel('media:'+dm.id).catch(function(){});
+    S.mem=S.mem.filter(function(x){return x!==dm});dbDel('media:'+dm.id).catch(function(){});markDel('mem:'+dm.id);
     save();closeSheet();render();toast('Moment gelöscht');
   }
-  else if(a==='ms-done'){var ms=S.ms.filter(function(x){return x.id===id})[0];S.mem.push({id:S.nextId++,date:TODAY,type:'f',title:ms.label,note:'Als Meilenstein markiert.',ms:id,img:null,dur:10,auto:true,media:false});save();render();toast('Meilenstein erreicht')}
+  else if(a==='ms-done'){var ms=S.ms.filter(function(x){return x.id===id})[0];S.mem.push({id:newId(),upd:Date.now(),date:TODAY,type:'f',title:ms.label,note:'Als Meilenstein markiert.',ms:id,img:null,dur:10,auto:true,media:false});save();render();toast('Meilenstein erreicht')}
   else if(a==='ms-undo'){S.mem=S.mem.filter(function(x){return !(x.id===+id&&x.auto)});save();closeSheet();render()}
-  else if(a==='ms-del'){S.ms=S.ms.filter(function(x){return x.id!==id});save();render()}
+  else if(a==='ms-del'){S.ms=S.ms.filter(function(x){return x.id!==id});markDel('ms:'+id);save();render()}
   else if(a==='ms-new'){S.msForm=true;render();var n=$('ms-name');if(n)n.focus()}
   else if(a==='ms-cancel'){S.msForm=false;render()}
   else if(a==='ms-add'){
     var nm=$('ms-name').value.trim();
     if(!nm){$('ms-err').hidden=false;return}
-    S.ms.push({id:'c'+(S.nextId++),label:nm,when:$('ms-when').value.trim()||'Eigener Meilenstein',custom:true});
+    S.ms.push({id:'c'+newId(),label:nm,when:$('ms-when').value.trim()||'Eigener Meilenstein',custom:true});
     S.msForm=false;save();render();toast('Meilenstein angelegt');
   }
   else if(a==='film-toggle')filmToggle();
@@ -1546,10 +1606,11 @@ document.addEventListener('click',function(e){
     var wn=$('w-name').value.trim(),wg=$('w-geb').value,we=$('w-err');
     if(!wn){we.textContent='Bitte gib einen Namen ein.';we.hidden=false;$('w-name').focus();return}
     if(!parseISO(wg)){we.textContent='Bitte wähle den Geburtstag aus.';we.hidden=false;$('w-geb').focus();return}
-    S.profile.name=wn;S.profile.geb=wg;setBirth();S.tab='home';save();render();window.scrollTo(0,0);setTimeout(function(){tourOpen(0)},350);
+    S.profile.name=wn;S.profile.geb=wg;S.profile.upd=Date.now();setBirth();S.tab='home';save();render();window.scrollTo(0,0);setTimeout(function(){tourOpen(0)},350);
   }
   else if(a==='welcome-sample'){resetAll(true);setTimeout(function(){tourOpen(0)},450)}
   else if(a==='backup')backup();
+  else if(a==='sync-share')shareSync();
   else if(a==='sample')resetAll(true);
   else if(a==='fresh')resetAll(false);
   else if(a==='install'&&installEvt){installEvt.prompt();installEvt.userChoice.finally(function(){installEvt=null;render()})}
@@ -1574,6 +1635,7 @@ document.addEventListener('change',function(e){
   if(!t.files||!t.files[0])return;
   var f=t.files[0];
   if(t.id==='imp'){restore(f);t.value='';return}
+  if(t.id==='sync-in'||t.id==='w-sync'){mergeFile(f).then(function(){if(t.id==='w-sync'&&!isEmptyLocal()){S.tab='home';render()}});t.value='';return}
   if(t.id==='m-file'){setCustomMusic(f,f.name.replace(/\.[^.]+$/,''));$('fmusic').innerHTML=musicChips();toast('Musik gewählt: '+S.musicName);t.value='';return}
   if(t.id==='lt-file'&&S.lt){var LT=S.lt;LT.blob=f;LT.file=f.name;refreshLt();mediaInfo(f,'s').then(function(o){LT.dur=Math.round(o.dur)||0;if(LT.dur)LT.file=f.name+' · '+mmss(LT.dur*1000);refreshLt()});return}
   if(t.id!=='a-file'||!S.add)return;
