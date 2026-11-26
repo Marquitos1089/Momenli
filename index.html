@@ -633,6 +633,7 @@ function profileHTML(){
   done.forEach(function(m){var mm=memOf(m.id);
     out+='<li><strong>'+esc(m.label)+'</strong><span>'+fmtDate(mm.date)+' · '+ageText(mm.date)+'</span>'+(mm.note?'<p>'+esc(mm.note)+'</p>':'')+'</li>'});
   out+='<li class="now"><strong>Heute</strong><span>'+fmtDate(TODAY)+' · '+ageText(TODAY)+'</span></li></ol></div>';
+  out+=growthHTML();
   out+='<h2 class="h2">Daten und Sicherung</h2><div class="card pad">'
    +'<p style="margin:0">'+(DB?'Alle Momente, Fotos, Videos und Sprachaufnahmen '+(S.kids.length>1?'aller Kinder ':'')+'werden nur auf diesem Gerät in diesem Browser gespeichert. Es geht nichts ins Internet.':'<b>Achtung:</b> Dieser Browser erlaubt hier kein dauerhaftes Speichern. Änderungen gehen beim Schließen verloren.')+'</p>'
    +'<p class="small" id="usage"></p>'
@@ -1067,6 +1068,18 @@ function chartHTML(ms){
    +'<polyline fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" points="'+pts.map(function(p){return X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)}).join(' ')+'"/>'
    +pts.map(function(p){return '<circle cx="'+X(p[0]).toFixed(1)+'" cy="'+Y(p[1]).toFixed(1)+'" r="3.2" fill="var(--accent)"/>'}).join('')+'</svg>';
 }
+function growthHTML(){
+  var r=R(),out='';
+  var ms=r.measures.slice().sort(function(a,b){return a.date<b.date?-1:1});
+  out+='<h2 class="h2">Größe und Gewicht</h2>';
+  if(ms.length){
+    var lt=ms[ms.length-1];
+    out+='<div class="card pad"><p style="margin:0"><strong>'+fmtNum(lt.cm)+' cm</strong>'+(lt.kg!=null?' · '+fmtNum(lt.kg,2)+' kg':'')+'<span class="tag"> am '+fmtShort(parseISO(lt.date))+'</span></p>'+chartHTML(ms)
+     +'<details class="msr"><summary>Alle '+ms.length+' Messungen</summary>'+ms.slice().reverse().map(function(x){return '<div class="msrow"><span>'+fmtShort(parseISO(x.date))+'<small> · '+ageText(parseISO(x.date))+'</small></span><span>'+[x.cm!=null?fmtNum(x.cm)+' cm':'',x.kg!=null?fmtNum(x.kg,2)+' kg':'',x.head!=null?'KU '+fmtNum(x.head)+' cm':''].filter(Boolean).join(' · ')+'</span><button class="icon-btn" data-act="msr-del" data-v="'+x.id+'" data-confirm="✕?" aria-label="Messung löschen">'+ic('trash',14)+'</button></div>'}).join('')+'</details></div>';
+  }else out+='<p class="tag">Noch keine Messung. Die Werte aus dem gelben U-Heft lassen sich gut nachtragen.</p>';
+  out+='<button class="dash" data-act="msr-open">'+ic('plus',18)+'Messung eintragen</button>';
+  return out;
+}
 function ritHTML(){
   var r=R(),y=ageYears(TODAY),my=maxYear();
   var curY=Math.max(1,(Math.round((bday(y+1)-TODAY)/DAY)<=60||y<1)?y+1:y);/* aktueller Geburtstag: der nächste, oder der gerade gefeierte */
@@ -1097,15 +1110,6 @@ function ritHTML(){
      +'<div class="card pad" style="margin-top:8px"><p class="tag" style="margin:0 0 8px">'+esc(qtxt)+'</p><ol class="story">'
      +Object.keys(r.interviews).map(Number).sort(function(a,b){return a-b}).filter(function(k){return (r.interviews[k].answers||{})[S.ritQ]}).map(function(k){return '<li><strong>'+esc(r.interviews[k].answers[S.ritQ])+'</strong><span>Mit '+yrs(k)+'</span></li>'}).join('')+'</ol></div>';
   }
-  /* Größe und Gewicht */
-  var ms=r.measures.slice().sort(function(a,b){return a.date<b.date?-1:1});
-  out+='<h2 class="h2">Größe und Gewicht</h2>';
-  if(ms.length){
-    var lt=ms[ms.length-1];
-    out+='<div class="card pad"><p style="margin:0"><strong>'+fmtNum(lt.cm)+' cm</strong>'+(lt.kg!=null?' · '+fmtNum(lt.kg,2)+' kg':'')+'<span class="tag"> am '+fmtShort(parseISO(lt.date))+'</span></p>'+chartHTML(ms)
-     +'<details class="msr"><summary>Alle '+ms.length+' Messungen</summary>'+ms.slice().reverse().map(function(x){return '<div class="msrow"><span>'+fmtShort(parseISO(x.date))+'<small> · '+ageText(parseISO(x.date))+'</small></span><span>'+[x.cm!=null?fmtNum(x.cm)+' cm':'',x.kg!=null?fmtNum(x.kg,2)+' kg':'',x.head!=null?'KU '+fmtNum(x.head)+' cm':''].filter(Boolean).join(' · ')+'</span><button class="icon-btn" data-act="msr-del" data-v="'+x.id+'" data-confirm="✕?" aria-label="Messung löschen">'+ic('trash',14)+'</button></div>'}).join('')+'</details></div>';
-  }else out+='<p class="tag">Noch keine Messung. Die Werte aus dem gelben U-Heft lassen sich gut nachtragen.</p>';
-  out+='<button class="dash" data-act="msr-open">'+ic('plus',18)+'Messung eintragen</button>';
   /* Monatsfotos */
   var mo=ageMonths(TODAY),maxM=Math.min(mMax(),mo+1),G=maxM<=12?0:Math.ceil((maxM-12)/12),nPh=0;
   out+='<h2 class="h2">Monatsfotos</h2><p class="tag" style="margin:-6px 0 10px">Jeden Monat ein Foto, immer am selben Ort und mit demselben Abstand. Beim Aufnehmen mit der Kamera liegt das letzte Monatsfoto als Vorlage darüber. Verpasste Monate sind kein Problem.</p>'
@@ -1210,10 +1214,10 @@ function icsFile(){
       .concat([].concat.apply([],alarms.map(function(a){return alarm(title,a)}))).concat(['END:VEVENT']).join('\r\n'));
   }
   var y=ageYears(TODAY),mo=ageMonths(TODAY);
-  if(y<18)E('geburtstag',bday(y+1),n+' hat Geburtstag: Momenli-Rituale','Brief oder Sprachnachricht an '+n+' schreiben, Mini-Interview führen, Geburtstagsfoto am gewohnten Ort machen, Größe und Gewicht messen. Alles in Momenli unter Rituale.','FREQ=YEARLY;COUNT='+(18-y),['-P7D','PT9H']);
+  if(y<18)E('geburtstag',bday(y+1),n+' hat Geburtstag: Momenli-Rituale','Brief oder Sprachnachricht an '+n+' schreiben, Mini-Interview führen, Geburtstagsfoto am gewohnten Ort machen, Größe und Gewicht messen. Brief, Interview und Foto in Momenli unter Rituale, Messung im Steckbrief.','FREQ=YEARLY;COUNT='+(18-y),['-P7D','PT9H']);
   if(mo<mMax())E('monatsfoto',addMonths(BIRTH,mo+1),'Monatsfoto von '+n,'Monatsfoto am gewohnten Ort machen, mit der Kamera in Momenli liegt das letzte Foto als Vorlage darüber. Unter Rituale speichern.','FREQ=MONTHLY;COUNT='+(mMax()-mo),['PT9H']);
-  var a=Math.floor(mo/2)*2+2;if(a<12){E('messen-baby',addMonths(BIRTH,a),'Größe und Gewicht von '+n+' messen','Im ersten Jahr alle zwei Monate. In Momenli unter Rituale eintragen.','FREQ=MONTHLY;INTERVAL=2;COUNT='+Math.max(1,Math.floor((12-a)/2)),['PT9H'])}
-  if(mo<35){var b=Math.max(16,Math.floor(mo/4)*4+4);if(b<36)E('messen-klein',addMonths(BIRTH,b),'Größe und Gewicht von '+n+' messen','Bis zum 3. Geburtstag alle vier Monate, danach einmal im Jahr zum Geburtstag. In Momenli unter Rituale eintragen.','FREQ=MONTHLY;INTERVAL=4;COUNT='+Math.ceil((36-b)/4),['PT9H'])}
+  var a=Math.floor(mo/2)*2+2;if(a<12){E('messen-baby',addMonths(BIRTH,a),'Größe und Gewicht von '+n+' messen','Im ersten Jahr alle zwei Monate. In Momenli im Steckbrief eintragen.','FREQ=MONTHLY;INTERVAL=2;COUNT='+Math.max(1,Math.floor((12-a)/2)),['PT9H'])}
+  if(mo<35){var b=Math.max(16,Math.floor(mo/4)*4+4);if(b<36)E('messen-klein',addMonths(BIRTH,b),'Größe und Gewicht von '+n+' messen','Bis zum 3. Geburtstag alle vier Monate, danach einmal im Jahr zum Geburtstag. In Momenli im Steckbrief eintragen.','FREQ=MONTHLY;INTERVAL=4;COUNT='+Math.ceil((36-b)/4),['PT9H'])}
   return 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Momenli//DE\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:Momenli '+icsEsc(n)+'\r\n'+ev.join('\r\n')+'\r\nEND:VCALENDAR\r\n';
 }
 
@@ -1304,8 +1308,8 @@ var TOUR={i:0,steps:[
  {sel:'.fab',icon:'plus',t:'Neuen Moment festhalten',d:'Mit dem roten Plus speicherst du ein Foto, ein Video oder eine Sprachnachricht. Du kannst direkt die Kamera öffnen oder eine Datei vom Handy wählen und das Datum auch nachträglich ändern.'},
  {tab:'home',icon:'heart',t:'Momente',d:'Hier stehen alle Momente nach Lebensmonaten sortiert. Oben filterst du nach Fotos, Videos, Sprache oder Meilensteinen. Tippe einen Moment an, um ihn groß zu sehen, zu bearbeiten oder zu löschen. Unter „Ideen für jetzt“ findest du Vorschläge passend zum Alter, über 300 von der Schwangerschaft bis 18.'},
  {tab:'ms',icon:'award',t:'Meilensteine',d:'Erstes Lächeln, erste Schritte und vieles mehr. Tippe auf einen Meilenstein, um ein Foto oder Video dazu zu speichern. Eigene Meilensteine kannst du auch anlegen.'},
- {tab:'rit',icon:'repeat',t:'Rituale',d:'Jeden Monat ein Foto am selben Ort, zu jedem Geburtstag ein Brief und ein kleines Interview, dazu Größe und Gewicht. Die rote Zahl zeigt, was gerade ansteht. Die Termine kannst du auch in deinen Kalender holen.'},
- {tab:'profile',icon:'book',t:'Steckbrief',d:'Geburtsangaben und die Lebensgeschichte deines Kindes. Mit „Bearbeiten“ änderst du die Angaben. Ganz unten kannst du eine Sicherung herunterladen, das solltest du ab und zu tun.'},
+ {tab:'rit',icon:'repeat',t:'Rituale',d:'Jeden Monat ein Foto am selben Ort, zu jedem Geburtstag ein Brief und ein kleines Interview. Die rote Zahl zeigt, was gerade ansteht. Die Termine kannst du auch in deinen Kalender holen.'},
+ {tab:'profile',icon:'book',t:'Steckbrief',d:'Geburtsangaben, die Lebensgeschichte deines Kindes und Größe und Gewicht mit Verlauf. Mit „Bearbeiten“ änderst du die Angaben. Ganz unten kannst du eine Sicherung herunterladen, das solltest du ab und zu tun.'},
  {tab:'film',icon:'film',t:'Film',d:'Aus allen Momenten entsteht automatisch ein Film, mit Musik und als Video speicherbar. Im Zeitraffer siehst du dein Kind von Monatsfoto zu Monatsfoto wachsen.'},
  {sel:'.kidbtn',icon:'plus',t:'Mehrere Kinder',d:'Oben rechts wechselst du zwischen deinen Kindern oder legst ein weiteres Kind an. Jedes Kind hat eigene Momente, Rituale und einen eigenen Film.'}
 ]};
