@@ -270,6 +270,10 @@ details.mgroup summary span{margin-left:auto;font:400 .8rem var(--font-body);col
 .sheet.tourmode .grab{display:none}
 body.touring .tabs{z-index:35}
 body.touring .kidbtn.tour-hl{z-index:45}
+/* Ideen */
+.ms.idea.done .mk{background:var(--ok);color:#fff}
+.ms.idea.hid{opacity:.55}
+.ms.idea .ms-open h3{font-weight:500}
 </style>
 </head>
 <body>
@@ -402,7 +406,7 @@ var PF=[['name','Name','Emma Sophie Müller'],['geb','Geboren am','2025-01-15'],
 ['gew','Gewicht','3.450 g'],['gr','Größe','52 cm'],['kopf','Kopfumfang','34 cm'],['blut','Blutgruppe','A positiv'],
 ['haar','Haare','Dunkelbraun'],['aug','Augen','Blau'],['eltern','Eltern','Sarah & Max Müller']];
 
-var S={tab:'home',filter:'alle',msForm:false,add:null,mem:[],ms:[],profile:{},nextId:100,music:'spieluhr',musicName:'',sample:true,kids:[],cur:'',lastId:0,pfEdit:false,filmMode:'leben',ritYear:0,ritQ:'',lt:null,iv:0};
+var S={tab:'home',filter:'alle',msForm:false,add:null,mem:[],ms:[],profile:{},nextId:100,music:'spieluhr',musicName:'',sample:true,kids:[],cur:'',ideaPh:null,showHid:false,lastId:0,pfEdit:false,filmMode:'leben',ritYear:0,ritQ:'',lt:null,iv:0};
 
 /* ---------- Mehrere Kinder: S.mem, S.ms, S.profile zeigen immer auf das gewählte Kind ---------- */
 function newId(){var n=Date.now()*1000+Math.floor(Math.random()*1000);if(n<=S.lastId)n=S.lastId+1;S.lastId=n;return n}
@@ -474,7 +478,7 @@ function snapshot(){
     kids:S.kids.map(function(k){return {kid:k.kid,profile:k.profile,ms:k.ms,sample:!!k.sample,
       rit:JSON.parse(JSON.stringify(k.rit||emptyRit(),function(key,v){return key==='url'?undefined:v})),
       del:k.del||{},
-      mem:k.mem.map(function(m){return {upd:m.upd||0,id:m.id,date:iso(m.date),type:m.type,title:m.title,note:m.note,ms:m.ms,img:m.img,dur:m.dur,auto:m.auto,media:!!m.media,mime:m.mime||'',fname:m.fname||'',rit:m.rit||''}})}})};
+      mem:k.mem.map(function(m){return {idea:m.idea||'',upd:m.upd||0,id:m.id,date:iso(m.date),type:m.type,title:m.title,note:m.note,ms:m.ms,img:m.img,dur:m.dur,auto:m.auto,media:!!m.media,mime:m.mime||'',fname:m.fname||'',rit:m.rit||''}})}})};
 }
 function applySnap(o){
   S.nextId=o.nextId||100;S.music=o.music||'spieluhr';S.musicName=o.musicName||'';
@@ -549,7 +553,7 @@ function homeHTML(){
     return '<button class="chip" data-act="filter" data-v="'+c[0]+'" aria-pressed="'+(f===c[0])+'">'+c[1]+'<b>'+c[2]+'</b></button>'}).join('');
   var out=topHTML()
    +'<h1>'+esc(first())+'</h1><p class="lede">'+ageText(TODAY)+' alt · '+all.length+(all.length===1?' Moment · ':' Momente · ')+doneCount()+(doneCount()===1?' Meilenstein</p>':' Meilensteine</p>')
-   +bannerHTML()
+   +bannerHTML()+ideasCard()
    +'<p class="label">Monatsfotos</p><div class="strip">'+strip+'</div>'
    +'<div class="chips" style="margin-top:10px">'+chips+'</div>';
   if(!list.length){out+='<p class="empty">Hier ist noch nichts. Tippe auf das Plus, um einen Moment hinzuzufügen.</p>';return out}
@@ -1201,10 +1205,80 @@ function growthLine(){var ms=R().measures.filter(function(x){return x.cm!=null})
 function ivPairs(I,max,Y){var qs=ivQs(Y,I),out=[];qs.forEach(function(q){if(out.length<max&&I.answers[q[0]])out.push([qText(q,Y),I.answers[q[0]]])});return out}
 function excerpt(t,n){t=String(t||'');return t.length>n?t.slice(0,n).replace(/\s+\S*$/,'')+' …':t}
 
+/* ---------- Ideen nach Alter (eigene Texte). Format: Typ|Titel  (f Foto, v Video, s Sprache). Nur hinten anhängen, die Position ist die ID. ---------- */
+var IDEAS=[
+['ss','Schwangerschaft',-99,-1,[
+'f|Der positive Schwangerschaftstest','s|Wie wir es erfahren haben, in unseren Worten','v|Die Reaktion der Großeltern auf die Nachricht','f|Erstes Ultraschallbild','s|Der Herzschlag beim Frauenarzt','f|Bauchfoto jeden Monat am selben Platz','f|Die erste Babykleidung, die wir gekauft haben','s|Brief an dich, bevor wir uns kennen','f|Das Kinderzimmer im Entstehen','v|Der erste spürbare Tritt im Bauch','f|Papa liest dem Bauch etwas vor','s|Namen, die wir in Betracht gezogen haben','f|Die gepackte Kliniktasche','f|Die Babyparty oder der Kaffee mit Freundinnen','f|Der letzte Abend zu zweit','s|Was wir uns für dich wünschen','f|Die Hände auf dem Bauch, von allen, die sich freuen','v|Kurzer Rundgang durch die Wohnung vor deiner Ankunft','f|Der Mutterpass mit den ersten Einträgen','s|Ein Lied, das wir dem Bauch vorgesungen haben']],
+['m0','Der erste Monat',0,0,[
+'f|Die ersten Minuten zusammen','f|Deine winzigen Füße neben Papas Hand','f|Das Namensbändchen aus der Klinik','f|Der erste Ausflug im Kinderwagen','f|Heimfahrt im Autositz','v|Der erste Gähner','f|Geschwister halten dich zum ersten Mal','f|Oma und Opa mit dir im Arm','s|Wie die erste Nacht zuhause war','f|Die ersten Glückwunschkarten','f|Schlafend auf Mamas Brust','f|Dein Gesicht in Großaufnahme','v|Deine ersten Geräusche beim Schlafen','f|Das erste Bad zuhause','f|Fußabdruck und Handabdruck','f|Die Zeitungsseite oder Schlagzeile von deinem Geburtstag','s|Wer zuerst zu Besuch kam','f|Dein erstes Kuscheltier','f|Die Wiege oder das Bettchen mit dir darin','f|Familienfoto zu dritt (oder mehr)']],
+['m1','1 bis 3 Monate',1,3,[
+'f|Das erste echte Lächeln','v|Glucksen und erste Laute','f|Bauchlage mit erhobenem Kopf','v|Du verfolgst ein Spielzeug mit den Augen','f|Spaziergang im Tragetuch','f|Deine Hand umklammert einen Finger','s|Unser Schlaflied','f|Erster Besuch bei Freunden','f|Mittagsschlaf im Freien','v|Strampeln auf der Krabbeldecke','f|Das erste Mal im Babybecken','f|Dein Lieblingsplatz in der Wohnung','f|Die erste Impfung, danach getröstet','s|Was du gerade am liebsten hörst','f|Gemeinsam auf dem Sofa eingeschlafen','f|Erster Ausflug in die Natur','v|Du entdeckst deine Hände','f|Dein Gesicht beim Aufwachen','f|Mit Geschwistern oder Haustier','s|Gute-Nacht-Gruß von Papa']],
+['m4','4 bis 6 Monate',4,6,[
+'v|Lautes Lachen','v|Du drehst dich zum ersten Mal','f|Greifen nach den Zehen','f|Der erste Brei, mit allem im Gesicht','v|Dein Gesicht beim ersten Löffel','f|Sitzen mit Stütze','f|Erster Zahn in Sicht','f|Spielen mit der Rassel','v|Brabbeln im Gespräch mit uns','f|Erster Urlaub oder Ausflug über Nacht','f|Im Spiegel entdeckst du dich selbst','f|Planschen in der Wanne','f|Ausflug in den Zoo oder Tierpark','s|Deine Laute, kurz aufgenommen','f|Babyschwimmen','f|Erster Besuch im Café','f|Spielen mit dem Papier vom Geschenk','v|Du erkennst Mama oder Papa an der Tür','f|Lieblingsoutfit gerade','f|Händchen in Sand oder Gras']],
+['m7','7 bis 9 Monate',7,9,[
+'f|Sitzen ganz allein','v|Erstes Robben oder Krabbeln','f|Fingerfood zum ersten Mal','v|Winke-winke','f|Erster Zahn','v|Klatschen','f|Mit dem Lieblingsbuch','f|Ausräumen der Küchenschublade','f|Erster Schnee oder erster Strand','v|Ziehen am Sofa zum Stehen','s|Dein „Mama“, „Papa“ oder „Dada“','f|Im Hochstuhl am Familientisch','f|Ganz nah mit dem Haustier','v|Guck-guck-Spiel','f|Dein erstes Paar Schuhe','f|Erster Kinderwagen-Spaziergang mit Blick nach vorne','f|Spielplatz-Schaukel','f|Bei den Großeltern übernachtet','v|Tanzen im Sitzen zu Musik','f|Einschlafen mitten im Spiel']],
+['m10','10 bis 12 Monate',10,12,[
+'v|Erste Schritte an der Hand','v|Ganz allein ein paar Schritte','s|Dein erstes Wort','f|Zeigen auf Dinge','f|Der Geburtstagskuchen','v|Kerze auspusten (oder es versuchen)','f|Geschenke auspacken','f|Familienfoto am ersten Geburtstag','f|Dein Lieblingsspielzeug zum ersten Geburtstag','f|Erster Haarschnitt','f|Eine Locke vom ersten Haarschnitt','s|Was wir über dein erstes Jahr erzählen','f|Gemeinsames Frühstück','v|Ball hin- und herrollen','f|Im Laub, Schnee oder Sand','f|Mit Freunden in deinem Alter','f|Erster Tag bei der Tagesmutter oder in der Krippe','v|Du räumst etwas ein und wieder aus','f|Du trinkst aus dem Becher','f|Der Blick aus dem Fenster']],
+['m13','13 bis 18 Monate',13,18,[
+'v|Sicheres Laufen','f|Erste Gummistiefel in der Pfütze','f|Selbst mit dem Löffel essen','s|Deine ersten Wörter, gesammelt','f|Rutschen auf dem Spielplatz','v|Dein Lieblingslied, mitgesungen','f|Malen mit Wachsmalern','f|Turm aus Bauklötzen','f|Bobbycar oder Rutscheauto','v|Tiergeräusche nachmachen','f|Im Garten oder auf dem Balkon buddeln','f|Zähneputzen allein (fast)','f|Lesen im Bett','v|Tanzen zu Musik','f|Lieblingsjacke oder Lieblingsmütze','f|Besuch auf dem Bauernhof','f|Erstes Eis','s|Wie du Dinge benennst','f|Verstecken hinter dem Vorhang','f|Schlafend in einer lustigen Position']],
+['m19','19 bis 24 Monate',19,24,[
+'v|Rennen und Hüpfen','s|Erste Sätze aus zwei Wörtern','f|Puzzle mit großen Teilen','f|Backen mit Mama oder Papa','f|Laufrad','v|Du singst ein Lied','f|Seifenblasen','f|Selbst anziehen (verkehrt herum zählt)','f|Fingerfarben','f|Erster Besuch im Kino oder Theater für Kleine','f|Der zweite Geburtstag','f|Familienfoto zum zweiten Geburtstag','s|Was du zu Bildern im Buch erzählst','f|Schwimmbad mit Schwimmflügeln','v|Kitzelkampf','f|Lieblingsessen auf dem Teller','f|Kuscheltier bekommt einen Namen','f|Erster Ausflug mit dem Zug','v|„Nein!“ mit Überzeugung','f|Mit dem Rucksack zur Kita']],
+['y2','2 Jahre',25,35,[
+'s|Gespräch beim Abendessen','f|Kreidebilder auf dem Gehweg','v|Ballspielen mit Kick','f|Verkleidet als Lieblingsfigur','f|Toilettentraining, der erste Erfolg','s|Deine Gute-Nacht-Fragen','f|Kuchenteig naschen','f|Laternenumzug','f|Erstes eigenes Bett','v|Du erzählst, was heute passiert ist','f|Höhle aus Decken','f|Garten oder Pflanze, die du gegossen hast','f|Lieblingsbuch, abgegriffen','f|Fahrrad mit Stützrädern oder Laufrad','f|Erster Zahnarztbesuch','s|Wie du „ich hab dich lieb“ sagst','f|Mit Opa und Oma unterwegs','f|Matschhose im Wald','v|Purzelbaum','f|Selbst gemaltes Bild am Kühlschrank']],
+['y3','3 Jahre',36,47,[
+'s|Mini-Interview zum Geburtstag','f|Erster Kindergartentag','f|Die Kindergartentasche','s|Was du über den Kindergarten erzählst','f|Freundschaft im Kindergarten','v|Fahrradfahren üben','f|Kostüm an Fasching','f|Erste Übernachtung bei Oma und Opa','s|Eine Geschichte, die du selbst erfindest','f|Dein Name, zum ersten Mal selbst gemalt','v|Lied aus dem Kindergarten','f|Plätzchen backen','f|Bauwerk aus Lego oder Duplo','f|Gartenarbeit','f|Strandburg','f|Mit der Taschenlampe im Dunkeln','v|Du erklärst uns die Welt','f|Selbst geschmierte Brotdose','f|Lieblingsplatz im Kindergarten','f|Kindergeburtstag mit Freunden']],
+['y4','4 Jahre',48,59,[
+'s|Warum-Fragen, die wir nicht beantworten konnten','f|Freundebuch-Seite','f|Fahrradfahren ohne Stützräder','v|Schwimmversuche','f|Zahnlücke in Sicht','f|Selbst gebastelte Laterne','v|Kleine Aufführung im Wohnzimmer','f|Kuscheltier-Familie in einer Reihe','f|Picknick im Park','s|Ein Witz, den du dir ausgedacht hast','f|Lieblingsoutfit, selbst ausgesucht','f|Erste Wanderung','f|Zelten im Garten','v|Tanz mit Verkleidung','f|Muschel- oder Steinsammlung','f|Mithelfen beim Kochen','s|Was du werden möchtest','f|Bei Freunden zum Spielen','f|Dein Zimmer, wie es gerade ist','f|Herbstblätter-Collage']],
+['y5','5 Jahre',60,71,[
+'f|Vorschulkind im Kindergarten','f|Ausflug mit der Vorschulgruppe','f|Erster Wackelzahn','f|Zahnlücke-Lächeln','v|Seepferdchen geschafft','s|Du liest uns etwas vor (oder erzählst nach Bildern)','f|Dein Name in Buchstaben, sauber geschrieben','f|Abschied aus dem Kindergarten','f|Kindergeburtstag mit Motto','f|Erstes Brettspiel gewonnen','v|Tricks auf dem Fahrrad','f|Klettern auf dem Spielplatz','s|Deine Meinung zur Einschulung','f|Schulranzen aussuchen','f|Ausflug in ein Museum','f|Schneemann bauen','f|Selbst Brote schmieren','s|Ein Lied, das du ganz allein singst','f|Mit Haustier oder Lieblingstier','f|Sonnenuntergang zusammen']],
+['y6','6 Jahre und Einschulung',72,83,[
+'f|Einschulung mit Schultüte','f|Erster Schultag vor der Haustür','f|Die Schultüte von innen','f|Klassenzimmer und Platz','s|Was am ersten Schultag passiert ist','f|Erste Hausaufgaben','f|Erster Satz, selbst geschrieben','v|Du liest einen ersten Satz vor','f|Schulweg zum ersten Mal allein','f|Zeugnis der ersten Klasse','f|Erster herausgefallener Zahn','f|Brief an die Zahnfee','f|Schulfest','f|Neue Freundschaften in der Schule','v|Erste Musikstunde','f|Fußball, Turnen oder Tanzen im Verein','s|Was du von der Schule erzählst','f|Weihnachtsaufführung','f|Ferienbeginn','f|Lieblingsbuch zum Selberlesen']],
+['y7','7 bis 9 Jahre',84,119,[
+'f|Erster Ausweis oder Bibliotheksausweis','f|Schwimmabzeichen','v|Vorspiel mit dem Instrument','f|Turnier oder Wettkampf','f|Klassenfahrt','f|Lieblingsbuchreihe im Regal','s|Interview: deine besten Freunde','f|Selbst gebautes Baumhaus oder Lager','f|Fahrradtour mit der Familie','f|Erste eigene Uhr','s|Was du in den Ferien erlebt hast','f|Hobby, das dich gerade begeistert','v|Ein Kunststück, das du geübt hast','f|Zeugnistag','f|Mithilfe im Haushalt','f|Mit Geschwistern auf einem Bild wie früher','f|Schatzsuche am Geburtstag','f|Projekt in der Schule','s|Was dich gerade beschäftigt','f|Dein Zimmer im Wandel']],
+['y10','10 bis 12 Jahre',120,155,[
+'f|Wechsel auf die weiterführende Schule','f|Erster Tag an der neuen Schule','s|Wie der Schulwechsel war','f|Erstes eigenes Handy','f|Fahrradprüfung','f|Allein mit Bus oder Bahn','f|Großes Hobby-Ereignis','v|Auftritt, Konzert oder Spiel','f|Ferienlager','s|Deine Gedanken zum Erwachsenwerden','f|Selbst gekochtes Essen','f|Lieblingsserie oder Lieblingsspiel','f|Ausflug nur mit Mama oder nur mit Papa','f|Deine Sammlung','f|Klassenfoto','s|Brief an dich selbst in fünf Jahren','f|Größenvergleich am Türrahmen','f|Mit den Großeltern','f|Erster Kinobesuch mit Freunden','f|Urlaubsfoto am gleichen Ort wie früher']],
+['y13','13 bis 15 Jahre',156,191,[
+'f|Konfirmation, Kommunion oder Jugendweihe','s|Was dir gerade wichtig ist','f|Praktikum oder Schnuppertag','f|Austausch oder Schulreise','f|Erster eigener Job, zum Beispiel Zeitung austragen','f|Konzertbesuch','f|Dein Zimmer, ganz nach deinem Geschmack','v|Du bringst uns etwas bei','f|Sportlicher Erfolg','f|Selbst gestaltetes Projekt','s|Musik, die du gerade liebst','f|Familienurlaub, vielleicht der letzte, den du ganz mitmachst','f|Mit der besten Freundin oder dem besten Freund','s|Ein Rat, den du jüngeren Kindern gibst','f|Erster Ausflug ohne Eltern','f|Zeugnis mit Stolz','f|Größer als Mama oder Papa','f|Lieblingsort in der Stadt','s|Was wir an dir bewundern','f|Familienfoto wie jedes Jahr']],
+['y16','16 bis 18 Jahre',192,216,[
+'f|Erster Ferienjob','f|Führerschein-Training','f|Abschlussfeier oder Schulabschluss','s|Pläne nach der Schule','f|Abiball oder Abschlussball','f|Erste eigene Reise mit Freunden','f|Wahlbenachrichtigung zur ersten Wahl','s|Was du aus deiner Kindheit mitnimmst','f|Dein Zimmer vor dem Auszug','f|Lieblingsfoto aus jedem Jahr, nebeneinander','s|Brief der Eltern zum 18. Geburtstag','f|Der 18. Geburtstag','v|Rede oder Toast zum 18.','f|Familienfoto am selben Ort wie vor 18 Jahren','s|Interview: 18 Fragen zum 18.','f|Erstes eigenes Konto oder erster Ausweis','f|Mit den Großeltern, wie früher','f|Die Schlüssel zur ersten eigenen Wohnung','s|Was du deinem jüngeren Ich sagen würdest','f|Der Film deines Lebens, gemeinsam angesehen']]
+];
+function ideaPhaseIndex(mo){for(var i=0;i<IDEAS.length;i++)if(mo>=IDEAS[i][2]&&mo<=IDEAS[i][3])return i;return mo<0?0:IDEAS.length-1}
+function ideaById(id){var p=id.split('-'),ph=IDEAS.filter(function(x){return x[0]===p[0]})[0];if(!ph)return null;var r=ph[4][+p[1]];return r?{id:id,type:r[0],t:r.slice(2),ph:ph}:null}
+function ideaDone(id){for(var i=0;i<S.mem.length;i++)if(S.mem[i].idea===id)return S.mem[i];return null}
+function ideaHidden(id){return !!(R().hid||{})[id]}
+function ideaList(pi){var ph=IDEAS[pi];return ph[4].map(function(r,i){return {id:ph[0]+'-'+i,type:r[0],t:r.slice(2)}})}
+function ideasNow(n){
+  var pi=ideaPhaseIndex(ageMonths(TODAY)),l=ideaList(pi).filter(function(x){return !ideaHidden(x.id)&&!ideaDone(x.id)});
+  if(l.length<n&&pi+1<IDEAS.length)l=l.concat(ideaList(pi+1).filter(function(x){return !ideaHidden(x.id)&&!ideaDone(x.id)}));
+  var off=Math.floor(TODAY/DAY)%Math.max(1,l.length);return l.slice(off).concat(l.slice(0,off)).slice(0,n);
+}
+function ideaRow(x,withHide){
+  var d=ideaDone(x.id),h=ideaHidden(x.id);
+  return '<div class="ms idea'+(d?' done':'')+(h?' hid':'')+'"><span class="mk">'+ic(d?'check':typeIcon(x.type),18)+'</span>'
+   +'<div class="ms-open" role="button" tabindex="0" data-act="'+(d?'open':'idea')+'" data-id="'+(d?d.id:x.id)+'"><h3>'+esc(x.t)+'</h3><p class="meta">'+(d?'Festgehalten am '+fmtShort(d.date):(h?'Ausgeblendet':typeName(x.type)))+'</p></div>'
+   +(withHide&&!d?'<button class="icon-btn" data-act="idea-hide" data-id="'+x.id+'" aria-label="'+(h?'Wieder anzeigen':'Ausblenden')+'" title="'+(h?'Wieder anzeigen':'Ausblenden')+'">'+ic(h?'redo':'x',16)+'</button>':'<span></span>')+'</div>';
+}
+function ideasCard(){
+  var l=ideasNow(3);if(!l.length)return '';
+  return '<div class="gh" style="margin:24px 0 10px">Ideen für jetzt<button class="ghost" style="padding:7px 12px" data-act="tab" data-tab="ideas">Alle Ideen</button></div>'+l.map(function(x){return ideaRow(x,true)}).join('');
+}
+function ideasHTML(){
+  var cur=ideaPhaseIndex(ageMonths(TODAY));if(S.ideaPh==null)S.ideaPh=cur;
+  var pi=S.ideaPh,ph=IDEAS[pi],l=ideaList(pi),done=l.filter(function(x){return ideaDone(x.id)}).length,nh=l.filter(function(x){return ideaHidden(x.id)}).length;
+  var chips=IDEAS.map(function(p,i){return '<button class="chip'+(i<cur?' past':'')+(i===cur?' now':'')+'" data-act="idea-ph" data-v="'+i+'" aria-pressed="'+(i===pi)+'">'+esc(p[1])+'</button>'}).join('');
+  var vis=l.filter(function(x){return S.showHid||!ideaHidden(x.id)});
+  var total=IDEAS.reduce(function(a,p){return a+p[4].length},0);
+  return topHTML()+'<h1>Ideen</h1><p class="lede">'+total+' Ideen von der Schwangerschaft bis zum 18. Geburtstag. Tippe eine Idee an, um daraus einen Moment zu machen. Was nicht passt, blendest du mit dem Kreuz aus.</p>'
+   +'<div class="chips" id="idea-chips" style="margin-top:16px">'+chips+'</div>'
+   +'<div class="gh" style="margin:18px 0 10px">'+esc(ph[1])+'<span>'+done+' von '+l.length+' festgehalten</span></div>'
+   +vis.map(function(x){return ideaRow(x,true)}).join('')
+   +(nh?'<button class="dash" data-act="idea-showhid">'+(S.showHid?'Ausgeblendete verstecken':nh+' ausgeblendete Ideen zeigen')+'</button>':'');
+}
+
 /* ---------- Kurze Anleitung ---------- */
 var TOUR={i:0,steps:[
  {sel:'.fab',icon:'plus',t:'Neuen Moment festhalten',d:'Mit dem roten Plus speicherst du ein Foto, ein Video oder eine Sprachnachricht. Du kannst direkt die Kamera öffnen oder eine Datei vom Handy wählen und das Datum auch nachträglich ändern.'},
- {tab:'home',icon:'heart',t:'Momente',d:'Hier stehen alle Momente nach Lebensmonaten sortiert. Oben filterst du nach Fotos, Videos, Sprache oder Meilensteinen. Tippe einen Moment an, um ihn groß zu sehen, zu bearbeiten oder zu löschen.'},
+ {tab:'home',icon:'heart',t:'Momente',d:'Hier stehen alle Momente nach Lebensmonaten sortiert. Oben filterst du nach Fotos, Videos, Sprache oder Meilensteinen. Tippe einen Moment an, um ihn groß zu sehen, zu bearbeiten oder zu löschen. Unter „Ideen für jetzt“ findest du Vorschläge passend zum Alter, über 300 von der Schwangerschaft bis 18.'},
  {tab:'ms',icon:'award',t:'Meilensteine',d:'Erstes Lächeln, erste Schritte und vieles mehr. Tippe auf einen Meilenstein, um ein Foto oder Video dazu zu speichern. Eigene Meilensteine kannst du auch anlegen.'},
  {tab:'rit',icon:'repeat',t:'Rituale',d:'Jeden Monat ein Foto am selben Ort, zu jedem Geburtstag ein Brief und ein kleines Interview, dazu Größe und Gewicht. Die rote Zahl zeigt, was gerade ansteht. Die Termine kannst du auch in deinen Kalender holen.'},
  {tab:'profile',icon:'book',t:'Steckbrief',d:'Geburtsangaben und die Lebensgeschichte deines Kindes. Mit „Bearbeiten“ änderst du die Angaben. Ganz unten kannst du eine Sicherung herunterladen, das solltest du ab und zu tun.'},
@@ -1244,10 +1318,11 @@ function tabsHTML(){
 function render(){
   filmStop();
   $('tabs').hidden=S.tab==='welcome';
-  var v={welcome:welcomeHTML,home:homeHTML,ms:msHTML,rit:ritHTML,profile:profileHTML,film:filmHTML}[S.tab];
+  var v={ideas:ideasHTML,welcome:welcomeHTML,home:homeHTML,ms:msHTML,rit:ritHTML,profile:profileHTML,film:filmHTML}[S.tab];
   $('view').innerHTML=v();$('tabs').innerHTML=tabsHTML();
   if(S.tab==='film')filmMount();
   if(S.tab==='profile')showUsage();
+  if(S.tab==='ideas'){var ic2=$('idea-chips'),pi2=ic2&&ic2.querySelector('[aria-pressed="true"]');if(pi2)ic2.scrollLeft=pi2.offsetLeft-ic2.offsetLeft-16}
   if(S.tab==='rit'){var rc=$('rit-chips'),pc=rc&&rc.querySelector('[aria-pressed="true"]');if(pc)rc.scrollLeft=pc.offsetLeft-rc.offsetLeft-16}
 }
 function setTab(t){if(t!=='profile')S.pfEdit=false;S.tab=t;render();window.scrollTo(0,0)}
@@ -1286,7 +1361,7 @@ function detailHTML(m){
 function newAdd(t,rit,ms){return {type:t||'f',img:null,blob:null,file:'',dur:0,busy:false,rit:rit||'',ms:ms||''}}
 function editAdd(m){var A=newAdd(m.type,m.rit,m.ms);A.edit=m.id;A.img=m.img;A.dur=m.dur||0;A.file=m.media?(typeName(m.type)+' gespeichert'+(m.dur?' · '+mmss(m.dur*1000):'')+'. Tippen zum Ersetzen.'):'';return A}
 function msLabel(id){var x=S.ms.filter(function(q){return q.id===id})[0];return x?x.label:''}
-function autoTitle(){var A=S.add;return A.rit?ritLabel(A.rit):(A.ms?msLabel(A.ms):'')}
+function autoTitle(){var A=S.add;return A.rit?ritLabel(A.rit):(A.ms?msLabel(A.ms):(A.ideaT||''))}
 function ritOptions(sel){
   var o='<option value="">Kein wiederkehrendes Foto</option>',mo=ageMonths(TODAY),y=maxYear();
   for(var j=Math.max(0,Math.min(mo,mMax())-11);j<=Math.min(mMax(),mo+1);j++){var t='monat-'+j;if(!ritMem(t)||t===sel)o+='<option value="'+t+'"'+(t===sel?' selected':'')+'>'+ritLabel(t)+'</option>'}
@@ -1414,7 +1489,7 @@ async function saveMoment(){
     save();closeSheet();render();openSheet(detailHTML(em));toast('Änderungen gespeichert');return;
   }
   var id=newId();
-  var m={id:id,upd:Date.now(),date:d,type:A.type,title:title,note:$('a-note').value.trim(),ms:$('a-ms').value,img:A.img,dur:A.dur||0,auto:false,media:false,rit:$('a-rit').value};
+  var m={id:id,idea:A.idea||'',upd:Date.now(),date:d,type:A.type,title:title,note:$('a-note').value.trim(),ms:$('a-ms').value,img:A.img,dur:A.dur||0,auto:false,media:false,rit:$('a-rit').value};
   if(A.blob){
     try{await dbPut('media:'+id,A.blob);m.media=!!DB;m.mime=A.blob.type||'';}catch(e){toast('Die Datei ist zu groß für den Speicher.');}
     m.url=URL.createObjectURL(A.blob);
@@ -1479,6 +1554,7 @@ async function mergeFile(file){
       ['letters','interviews'].forEach(function(t){lr[t]=lr[t]||{};for(var y in (rr[t]||{})){if(!lr[t][y]||newer(rr[t][y],lr[t][y])){var keepUrl=lr[t][y]&&lr[t][y].url;lr[t][y]=rr[t][y];if(t==='letters'&&rr[t][y].mediaId){need.push(rr[t][y].mediaId);if(keepUrl)URL.revokeObjectURL(keepUrl)}}}});
       (rr.measures||[]).forEach(function(x){if(!del['msr:'+x.id]&&!lr.measures.some(function(y){return y.id===x.id}))lr.measures.push(x)});
       lr.measures=lr.measures.filter(function(x){return !del['msr:'+x.id]});
+      lr.hid=Object.assign({},rr.hid||{},lr.hid||{});
       (rr.qs||[]).forEach(function(x){if(!lr.qs.some(function(y){return y.id===x.id}))lr.qs.push(x)});
     });
     for(var n=0;n<need.length;n++){var key=need[n];if(media[key]){var b=await (await fetch(media[key])).blob();await dbPut('media:'+key,b);
@@ -1550,6 +1626,10 @@ document.addEventListener('click',function(e){
   else if(a==='msr-del'){var mid=b.getAttribute('data-v');R().measures=R().measures.filter(function(x){return x.id!==mid});markDel('msr:'+mid);save();render()}
   else if(a==='ics'){download(new Blob([icsFile()],{type:'text/calendar'}),'Momenli_Erinnerungen_'+first()+'.ics');toast('Kalenderdatei geladen. Öffne sie, um die Termine zu übernehmen.')}
   else if(a==='save')saveMoment();
+  else if(a==='idea'){var it=ideaById(id);if(!it)return;closeSheet();S.add=newAdd(it.type);S.add.idea=id;S.add.ideaT=it.t;openSheet(addHTML())}
+  else if(a==='idea-hide'){var hr=R();hr.hid=hr.hid||{};if(hr.hid[id])delete hr.hid[id];else{hr.hid[id]=1;toast('Ausgeblendet')}save();render()}
+  else if(a==='idea-ph'){S.ideaPh=+b.getAttribute('data-v');S.showHid=false;render()}
+  else if(a==='idea-showhid'){S.showHid=!S.showHid;render()}
   else if(a==='ms-moment'){closeSheet();S.add=newAdd('f','',id);openSheet(addHTML())}
   else if(a==='mem-edit'){var me=memById(id);if(!me)return;closeSheet();S.add=editAdd(me);openSheet(addHTML())}
   else if(a==='pf-edit'){S.pfEdit=true;render();var pn=$('pf-name');if(pn)pn.focus()}
@@ -1591,7 +1671,7 @@ document.addEventListener('click',function(e){
   else if(a==='export')exportFilm();
   else if(a==='export-cancel'){exportCancel();closeSheet();toast('Abgebrochen')}
   else if(a==='kids')openSheet(kidsHTML());
-  else if(a==='kid'){S.pfEdit=false;if(id!==S.cur){useKid(id);save()}closeSheet();S.tab=S.tab==='film'?'film':S.tab;render();window.scrollTo(0,0);toast(first()+' ausgewählt')}
+  else if(a==='kid'){S.pfEdit=false;S.ideaPh=null;if(id!==S.cur){useKid(id);save()}closeSheet();S.tab=S.tab==='film'?'film':S.tab;render();window.scrollTo(0,0);toast(first()+' ausgewählt')}
   else if(a==='kid-new'){
     syncKid();var nk=newKid();S.kids.push(nk);useKid(nk.kid);save();closeSheet();S.pfEdit=true;setTab('profile');toast('Neues Kind angelegt. Trag Name und Geburtstag ein.');
     var nf=$('pf-name');if(nf)nf.focus();
