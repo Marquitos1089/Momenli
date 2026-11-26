@@ -320,6 +320,8 @@ body.touring .kidbtn.tour-hl{z-index:45}
 body.editing{overflow:hidden}
 .toast{z-index:90}
 .ordr{margin-top:14px}.ordr .ghost[disabled]{opacity:.4;cursor:default}
+.h3x{font:600 1rem var(--font-body);margin:18px 0 10px}
+.ims{display:inline-flex;vertical-align:-2px;margin-left:6px;color:var(--accent)}
 </style>
 </head>
 <body>
@@ -524,7 +526,7 @@ function snapshot(){
     kids:S.kids.map(function(k){return {kid:k.kid,profile:k.profile,ms:k.ms,sample:!!k.sample,
       rit:JSON.parse(JSON.stringify(k.rit||emptyRit(),function(key,v){return key==='url'?undefined:v})),
       del:k.del||{},
-      mem:k.mem.map(function(m){return {idea:m.idea||'',upd:m.upd||0,id:m.id,date:iso(m.date),type:m.type,title:m.title,note:m.note,ms:m.ms,ord:m.ord!=null?m.ord:undefined,img:m.img,hq:!!m.hq,pics:m.pics&&m.pics.length?m.pics.map(function(p,i){return {pid:p.pid,hq:!!p.hq,orig:!!p.orig,ed:p.ed||undefined,img:i?p.img:''}}):undefined,dur:m.dur,auto:m.auto,media:!!m.media,mime:m.mime||'',fname:m.fname||'',rit:m.rit||''}})}})};
+      mem:k.mem.map(function(m){return {idea:m.idea||'',upd:m.upd||0,id:m.id,date:iso(m.date),type:m.type,title:m.title,note:m.note,ms:m.ms,ord:m.ord!=null?m.ord:undefined,story:m.story||undefined,img:m.img,hq:!!m.hq,pics:m.pics&&m.pics.length?m.pics.map(function(p,i){return {pid:p.pid,hq:!!p.hq,orig:!!p.orig,ed:p.ed||undefined,img:i?p.img:''}}):undefined,dur:m.dur,auto:m.auto,media:!!m.media,mime:m.mime||'',fname:m.fname||'',rit:m.rit||''}})}})};
 }
 function applySnap(o){
   S.nextId=o.nextId||100;S.music=o.music||'spieluhr';S.musicName=o.musicName||'';
@@ -626,29 +628,31 @@ function homeHTML(){
   return out;
 }
 
-function msHTML(){
+function msHTML(){S.tab='ideas';return ideasHTML()}
+function msBody(compact){
   var tot=S.ms.length,done=doneCount(),C=2*Math.PI*42,off=C*(1-(tot?done/tot:0));
   var dn=S.ms.filter(function(m){return memOf(m.id)}).sort(function(a,b){return memOf(b.id).date-memOf(a.id).date});
   var op=S.ms.filter(function(m){return !memOf(m.id)});
-  var out=topHTML()+'<h1>Meilensteine</h1>'
-   +'<div class="ring"><svg width="96" height="96" viewBox="0 0 100 100" role="img" aria-label="'+done+' von '+tot+' erreicht"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--line)" stroke-width="9"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--accent)" stroke-width="9" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 50 50)"/><text x="50" y="56" text-anchor="middle" style="fill:var(--ink);font:700 24px var(--font-display)">'+done+'</text></svg>'
+  var out='<div class="ring"><svg width="96" height="96" viewBox="0 0 100 100" role="img" aria-label="'+done+' von '+tot+' erreicht"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--line)" stroke-width="9"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--accent)" stroke-width="9" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 50 50)"/><text x="50" y="56" text-anchor="middle" style="fill:var(--ink);font:700 24px var(--font-display)">'+done+'</text></svg>'
    +'<div><p><strong>'+done+' von '+tot+'</strong> erreicht</p><p class="tag">Noch '+op.length+' offen</p></div></div>';
-  out+='<h2 class="h2">Offen</h2><p class="tag" style="margin:-6px 0 10px">Tippe auf einen Meilenstein, um ein Foto, Video oder eine Sprachnachricht dazu zu speichern.</p>';
+  if(compact){op=op.slice(0,3);out+='<p class="tag" style="margin:4px 0 10px">Noch offen:</p>'}
+  else out+='<h2 class="h3x">Offen</h2><p class="tag" style="margin:-4px 0 10px">Tippe auf einen Meilenstein, um ein Foto, Video oder eine Sprachnachricht dazu zu speichern.</p>';
   op.forEach(function(m){
     out+='<div class="ms"><span class="mk">'+ic('star',18)+'</span><div class="ms-open" role="button" tabindex="0" data-act="ms-moment" data-id="'+m.id+'" title="Moment zu diesem Meilenstein anlegen"><h3>'+esc(m.label)+(m.custom?'<span class="own">Eigener</span>':'')+'</h3><p class="meta">'+esc(m.when)+'</p></div><div style="display:flex;gap:6px">'
      +(m.custom?'<button class="icon-btn" data-act="ms-del" data-id="'+m.id+'" aria-label="Meilenstein löschen">'+ic('trash',16)+'</button>':'')
      +'<button class="mini" data-act="ms-done" data-id="'+m.id+'">Erreicht</button></div></div>';
   });
+  if(compact)return out+'<button class="dash" data-act="ms-toggle">Alle '+tot+' Meilensteine zeigen</button>';
   if(S.msForm){
     out+='<div class="card pad" style="margin-top:6px"><label class="fl" for="ms-name" style="margin-top:0">Name des Meilensteins</label><input class="fld" id="ms-name" placeholder="z. B. Erste Fahrt mit dem Laufrad"><label class="fl" for="ms-when">Wann ungefähr?</label><input class="fld" id="ms-when" placeholder="z. B. ca. 2 Jahre"><p class="err" id="ms-err" hidden>Bitte gib einen Namen ein.</p><div style="display:flex;gap:8px;margin-top:14px"><button class="ghost" data-act="ms-cancel">Abbrechen</button><button class="primary" style="margin:0;padding:11px" data-act="ms-add">Hinzufügen</button></div></div>';
   }else out+='<button class="dash" data-act="ms-new">'+ic('plus',18)+'Eigenen Meilenstein anlegen</button>';
-  out+='<h2 class="h2">Erreicht</h2>';
+  out+='<h2 class="h3x">Erreicht</h2>';
   if(!dn.length)out+='<p class="tag">Noch keiner. Tippe bei einem offenen Meilenstein auf „Erreicht“ oder wähle ihn beim Speichern eines Moments aus.</p>';
   dn.forEach(function(m){
     var mm=memOf(m.id);
     out+='<button class="ms done open" data-act="open" data-id="'+mm.id+'"><span class="mk">'+ic('check',18)+'</span><div><h3>'+esc(m.label)+(m.custom?'<span class="own">Eigener</span>':'')+'</h3><p class="meta">'+fmtShort(mm.date)+' · '+ageText(mm.date)+'</p></div><span></span></button>';
   });
-  return out;
+  return out+'<button class="dash" data-act="ms-toggle">Meilensteine einklappen</button>';
 }
 
 var installEvt=null;
@@ -667,8 +671,11 @@ function profileHTML(){
    +'<h2 class="h2">Meine Geschichte</h2><div class="card pad"><ol class="story">'
    +'<li><strong>Geburt</strong><span>'+[gebTxt,p.zeit,p.ort].filter(Boolean).map(esc).join(' · ')+'</span>'
    +((p.gew||p.gr||p.kopf)?'<p>'+[p.gew,p.gr,p.kopf?'Kopfumfang '+p.kopf:''].filter(Boolean).map(esc).join(', ')+'</p>':'')+'</li>';
-  done.forEach(function(m){var mm=memOf(m.id);
-    out+='<li><strong>'+esc(m.label)+'</strong><span>'+fmtDate(mm.date)+' · '+ageText(mm.date)+'</span>'+(mm.note?'<p>'+esc(mm.note)+'</p>':'')+'</li>'});
+  var st=done.map(function(m){return {t:m.label,mm:memOf(m.id),star:1}}),used={};st.forEach(function(x){used[x.mm.id]=1});
+  S.mem.forEach(function(m){if(m.story&&!used[m.id])st.push({t:m.title,mm:m})});
+  st.sort(function(a,b){return a.mm.date-b.mm.date||okey(a.mm)-okey(b.mm)});
+  st.forEach(function(x){var mm=x.mm;
+    out+='<li><strong>'+esc(x.t)+'</strong><span>'+fmtDate(mm.date)+' · '+ageText(mm.date)+'</span>'+(mm.note?'<p>'+esc(mm.note)+'</p>':'')+'</li>'});
   out+='<li class="now"><strong>Heute</strong><span>'+fmtDate(TODAY)+' · '+ageText(TODAY)+'</span></li></ol></div>';
   out+=growthHTML();
   out+='<h2 class="h2">Daten und Sicherung</h2><div class="card pad">'
@@ -1317,7 +1324,9 @@ var IDEAS=[
 ];
 function ideaPhaseIndex(mo){for(var i=0;i<IDEAS.length;i++)if(mo>=IDEAS[i][2]&&mo<=IDEAS[i][3])return i;return mo<0?0:IDEAS.length-1}
 function ideaById(id){var p=id.split('-'),ph=IDEAS.filter(function(x){return x[0]===p[0]})[0];if(!ph)return null;var r=ph[4][+p[1]];return r?{id:id,type:r[0],t:r.slice(2),ph:ph}:null}
-function ideaDone(id){for(var i=0;i<S.mem.length;i++)if(S.mem[i].idea===id)return S.mem[i];return null}
+var IDEA_MS={'m0-8':'zuhause','m0-13':'bad','m1-0':'laecheln','m4-0':'lachen','m4-1':'drehen','m4-3':'brei','m7-0':'sitzen','m7-1':'krabbeln','m7-4':'zahn','m10-2':'wort','m10-7':'geburtstag1','m10-1':'schritte','m19-10':'geburtstag2','m19-19':'kita','y6-1':'schule'};
+function ideaMs(id){var k=IDEA_MS[id];return k&&S.ms.some(function(m){return m.id===k})?k:''}
+function ideaDone(id){var k=ideaMs(id);if(k){var mm=memOf(k);if(mm)return mm}for(var i=0;i<S.mem.length;i++)if(S.mem[i].idea===id)return S.mem[i];return null}
 function ideaHidden(id){return !!(R().hid||{})[id]}
 function ideaList(pi){var ph=IDEAS[pi];return ph[4].map(function(r,i){return {id:ph[0]+'-'+i,type:r[0],t:r.slice(2)}})}
 function ideasNow(n){
@@ -1328,7 +1337,7 @@ function ideasNow(n){
 function ideaRow(x,withHide){
   var d=ideaDone(x.id),h=ideaHidden(x.id);
   return '<div class="ms idea'+(d?' done':'')+(h?' hid':'')+'"><span class="mk">'+ic(d?'check':typeIcon(x.type),18)+'</span>'
-   +'<div class="ms-open" role="button" tabindex="0" data-act="'+(d?'open':'idea')+'" data-id="'+(d?d.id:x.id)+'"><h3>'+esc(x.t)+'</h3><p class="meta">'+(d?'Festgehalten am '+fmtShort(d.date):(h?'Ausgeblendet':typeName(x.type)))+'</p></div>'
+   +'<div class="ms-open" role="button" tabindex="0" data-act="'+(d?'open':'idea')+'" data-id="'+(d?d.id:x.id)+'"><h3>'+esc(x.t)+(ideaMs(x.id)?'<span class="ims" title="Zählt als Meilenstein">'+ic('star',13)+'</span>':'')+'</h3><p class="meta">'+(d?'Festgehalten am '+fmtShort(d.date):(h?'Ausgeblendet':typeName(x.type)))+'</p></div>'
    +(withHide&&!d?'<button class="icon-btn" data-act="idea-hide" data-id="'+x.id+'" aria-label="'+(h?'Wieder anzeigen':'Ausblenden')+'" title="'+(h?'Wieder anzeigen':'Ausblenden')+'">'+ic(h?'redo':'x',16)+'</button>':'<span></span>')+'</div>';
 }
 function ideasCard(){
@@ -1341,8 +1350,10 @@ function ideasHTML(){
   var chips=IDEAS.map(function(p,i){return '<button class="chip'+(i<cur?' past':'')+(i===cur?' now':'')+'" data-act="idea-ph" data-v="'+i+'" aria-pressed="'+(i===pi)+'">'+esc(p[1])+'</button>'}).join('');
   var vis=l.filter(function(x){return S.showHid||!ideaHidden(x.id)});
   var total=IDEAS.reduce(function(a,p){return a+p[4].length},0);
-  return topHTML()+'<h1>Ideen</h1><p class="lede">'+total+' Ideen von der Schwangerschaft bis zum 18. Geburtstag. Tippe eine Idee an, um daraus einen Moment zu machen. Was nicht passt, blendest du mit dem Kreuz aus.</p>'
-   +'<div class="chips" id="idea-chips" style="margin-top:16px">'+chips+'</div>'
+  return topHTML()+'<h1>Ideen</h1><p class="lede">Die großen Meilensteine und '+total+' Ideen von der Schwangerschaft bis zum 18. Geburtstag. Tippe etwas an, um daraus einen Moment zu machen.</p>'
+   +'<h2 class="h2" id="ms-sec">Meilensteine</h2>'+msBody(!S.msOpen)
+   +'<h2 class="h2">Alle Ideen</h2><p class="tag" style="margin:-6px 0 0">Was nicht passt, blendest du mit dem Kreuz aus. Ideen mit Stern zählen auch als Meilenstein.</p>'
+   +'<div class="chips" id="idea-chips" style="margin-top:12px">'+chips+'</div>'
    +'<div class="gh" style="margin:18px 0 10px">'+esc(ph[1])+'<span>'+done+' von '+l.length+' festgehalten</span></div>'
    +vis.map(function(x){return ideaRow(x,true)}).join('')
    +(nh?'<button class="dash" data-act="idea-showhid">'+(S.showHid?'Ausgeblendete verstecken':nh+' ausgeblendete Ideen zeigen')+'</button>':'');
@@ -1352,7 +1363,7 @@ function ideasHTML(){
 var TOUR={i:0,steps:[
  {sel:'.fab',icon:'plus',t:'Neuen Moment festhalten',d:'Mit dem roten Plus speicherst du ein Foto, ein Video oder eine Sprachnachricht. Du kannst direkt die Kamera öffnen oder eine Datei vom Handy wählen und das Datum auch nachträglich ändern.'},
  {tab:'home',icon:'heart',t:'Momente',d:'Hier stehen alle Momente nach Lebensmonaten sortiert. Oben filterst du nach Fotos, Videos, Sprache oder Meilensteinen. Tippe einen Moment an, um ihn groß zu sehen, zu bearbeiten oder zu löschen. Unter „Ideen für jetzt“ findest du Vorschläge passend zum Alter, über 300 von der Schwangerschaft bis 18.'},
- {tab:'ms',icon:'award',t:'Meilensteine',d:'Erstes Lächeln, erste Schritte und vieles mehr. Tippe auf einen Meilenstein, um ein Foto oder Video dazu zu speichern. Eigene Meilensteine kannst du auch anlegen.'},
+ {tab:'ideas',icon:'award',t:'Ideen und Meilensteine',d:'Oben die großen Meilensteine mit Fortschritt, darunter über 300 Ideen nach Alter. Tippe etwas an, um direkt einen Moment daraus zu machen.'},
  {tab:'rit',icon:'repeat',t:'Rituale',d:'Jeden Monat ein Foto am selben Ort, zu jedem Geburtstag ein Brief und ein kleines Interview. Die rote Zahl zeigt, was gerade ansteht. Die Termine kannst du auch in deinen Kalender holen.'},
  {tab:'profile',icon:'book',t:'Steckbrief',d:'Geburtsangaben, die Lebensgeschichte deines Kindes und Größe und Gewicht mit Verlauf. Mit „Bearbeiten“ änderst du die Angaben. Ganz unten kannst du eine Sicherung herunterladen, das solltest du ab und zu tun.'},
  {tab:'film',icon:'film',t:'Film',d:'Aus allen Momenten entsteht automatisch ein Film, mit Musik und als Video speicherbar. Im Zeitraffer siehst du dein Kind von Monatsfoto zu Monatsfoto wachsen.'},
@@ -1383,7 +1394,7 @@ function welcomeHTML(){
 }
 /* ---------- Grundgerüst ---------- */
 function tabsHTML(){
-  var T=[['home','heart','Momente'],['ms','award','Meilensteine'],['rit','repeat','Rituale'],['profile','book','Steckbrief'],['film','film','Film']],dc=dueCount();
+  var T=[['home','heart','Momente'],['ideas','award','Ideen'],['rit','repeat','Rituale'],['profile','book','Steckbrief'],['film','film','Film']],dc=dueCount();
   return T.map(function(t){
     return '<button class="tab" data-act="tab" data-tab="'+t[0]+'"'+(S.tab===t[0]?' aria-current="page"':'')+'><span class="ti">'+ic(t[1],22)+(t[0]==='rit'&&dc?'<i class="badge" aria-label="'+dc+' offen">'+dc+'</i>':'')+'</span><span>'+t[2]+'</span></button>';
   }).join('')+'<button class="fab" data-act="add" aria-label="Neuen Moment hinzufügen">'+ic('plus',26)+'</button>';
@@ -1391,6 +1402,7 @@ function tabsHTML(){
 function render(){
   filmStop();
   $('tabs').hidden=S.tab==='welcome';
+  if(S.tab==='ms')S.tab='ideas';
   var v={ideas:ideasHTML,welcome:welcomeHTML,home:homeHTML,ms:msHTML,rit:ritHTML,profile:profileHTML,film:filmHTML}[S.tab];
   $('view').innerHTML=v();$('tabs').innerHTML=tabsHTML();
   if(S.tab==='film')filmMount();
@@ -1638,6 +1650,7 @@ function addHTML(){
    +'<label class="fl" for="a-note">Notiz</label><textarea class="fld" id="a-note" placeholder="Was macht diesen Moment besonders?">'+esc(E?E.note:'')+'</textarea>'
    +'<label class="fl" for="a-ms">Meilenstein (optional)</label><select class="fld" id="a-ms"><option value="">Kein Meilenstein</option>'+pend+'</select>'
    +'<label class="fl" for="a-rit">Wiederkehrendes Foto (optional)</label><select class="fld" id="a-rit">'+ritOptions(S.add.rit)+'</select>'
+   +'<label class="tog" style="margin-top:16px"><input type="checkbox" id="a-story"'+((E?E.story:A.story)?' checked':'')+'><span>In „Meine Geschichte“ aufnehmen<br><small class="tag">Erscheint im Steckbrief in der Lebensgeschichte. Meilensteine stehen dort sowieso.</small></span></label>'
    +'<p class="err" id="a-err" hidden>Bitte gib einen Titel ein.</p><button class="primary" data-act="save">'+(E?'Änderungen speichern':'Moment speichern')+'</button>';
 }
 /* Vorschau (max. 1280 px, im Speicherstand) und Druckfassung (max. 2400 px, eigene Datei) */
@@ -1713,13 +1726,13 @@ async function saveMoment(){
   if(A.edit){
     var em=memById(A.edit);if(!em){closeSheet();return}
     if(em.type==='f')await storePics(em,A);
-    em.upd=Date.now();em.title=title;em.date=d;em.note=$('a-note').value.trim();em.ms=$('a-ms').value;em.rit=$('a-rit').value;if(em.type!=='f')em.img=A.img;em.dur=A.dur||em.dur;em.auto=false;
+    em.upd=Date.now();em.title=title;em.date=d;em.note=$('a-note').value.trim();em.ms=$('a-ms').value;em.rit=$('a-rit').value;em.story=$('a-story').checked;if(em.type!=='f')em.img=A.img;em.dur=A.dur||em.dur;em.auto=false;
     if(A.blob){try{await dbPut('media:'+em.id,A.blob);em.media=!!DB;em.mime=A.blob.type||''}catch(e){toast('Die Datei ist zu groß für den Speicher.')}
       if(em.url)URL.revokeObjectURL(em.url);em.url=URL.createObjectURL(A.blob)}
     save();closeSheet();render();openSheet(detailHTML(em));toast('Änderungen gespeichert');return;
   }
   var id=newId();
-  var m={id:id,idea:A.idea||'',upd:Date.now(),date:d,type:A.type,title:title,note:$('a-note').value.trim(),ms:$('a-ms').value,img:A.img,dur:A.dur||0,auto:false,media:false,rit:$('a-rit').value};
+  var m={id:id,idea:A.idea||'',upd:Date.now(),date:d,type:A.type,title:title,note:$('a-note').value.trim(),ms:$('a-ms').value,story:$('a-story').checked,img:A.img,dur:A.dur||0,auto:false,media:false,rit:$('a-rit').value};
   if(A.type==='f')await storePics(m,A);
   if(A.blob){
     try{await dbPut('media:'+id,A.blob);m.media=!!DB;m.mime=A.blob.type||'';}catch(e){toast('Die Datei ist zu groß für den Speicher.');}
@@ -1882,7 +1895,7 @@ document.addEventListener('click',function(e){
   else if(a==='msr-del'){var mid=b.getAttribute('data-v');R().measures=R().measures.filter(function(x){return x.id!==mid});markDel('msr:'+mid);save();render()}
   else if(a==='ics'){download(new Blob([icsFile()],{type:'text/calendar'}),'Momentitos_Erinnerungen_'+first()+'.ics');toast('Kalenderdatei geladen. Öffne sie, um die Termine zu übernehmen.')}
   else if(a==='save')saveMoment();
-  else if(a==='idea'){var it=ideaById(id);if(!it)return;closeSheet();S.add=newAdd(it.type);S.add.idea=id;S.add.ideaT=it.t;openSheet(addHTML())}
+  else if(a==='idea'){var it=ideaById(id);if(!it)return;closeSheet();var ik=ideaMs(id);S.add=newAdd(it.type,'',ik&&!memOf(ik)?ik:'');S.add.idea=id;S.add.ideaT=it.t;openSheet(addHTML())}
   else if(a==='idea-hide'){var hr=R();hr.hid=hr.hid||{};if(hr.hid[id])delete hr.hid[id];else{hr.hid[id]=1;toast('Ausgeblendet')}save();render()}
   else if(a==='idea-ph'){S.ideaPh=+b.getAttribute('data-v');S.showHid=false;render()}
   else if(a==='idea-showhid'){S.showHid=!S.showHid;render()}
@@ -1951,6 +1964,7 @@ document.addEventListener('click',function(e){
   else if(a==='gal-go'){var g=$('gal');if(g)g.scrollTo({left:(galIndex()+(+b.getAttribute('data-v')))*g.clientWidth,behavior:'smooth'})}
   else if(a==='mem-ord'){var om=memById(id),ol=om?sameDay(om):[],oi=ol.indexOf(om),oj=oi+(+b.getAttribute('data-v'));
     if(om&&oj>=0&&oj<ol.length){var o2=ol[oj];ol.forEach(function(x){x.ord=okey(x)});var tk=om.ord;om.ord=o2.ord;o2.ord=tk;var now=Date.now();om.upd=now;o2.upd=now;save();render();openSheet(detailHTML(om));toast(+b.getAttribute('data-v')<0?'Früher eingeordnet':'Später eingeordnet')}}
+  else if(a==='ms-toggle'){S.msOpen=!S.msOpen;S.msForm=false;render();var sec=$('ms-sec');if(sec)sec.scrollIntoView()}
   else if(a==='pic-ed'&&S.add){var EP=S.add.photos[+b.getAttribute('data-i')];if(EP)edOpen(EP)}
   else if(a==='pic-rm'&&S.add){S.add.photos.splice(+b.getAttribute('data-i'),1);refreshCap()}
   else if(a==='sample')resetAll(true);
