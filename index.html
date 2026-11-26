@@ -246,6 +246,30 @@ details.mgroup summary span{margin-left:auto;font:400 .8rem var(--font-body);col
 .cam{position:relative;border-radius:20px;overflow:hidden;margin-top:14px;background:#000;aspect-ratio:3/4}
 .cam video,.cam img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .cam img{pointer-events:none}
+/* 26.11.: Großansicht, Steckbrief, Meilensteine, Anleitung */
+.det .photo{width:100%;max-height:70vh;object-fit:contain;border-radius:20px;background:var(--bg);display:block}
+.ms-open{cursor:pointer;border-radius:10px}
+.ms-open:hover h3{color:var(--accent)}
+.pf .pv{padding:10px 0;font:500 1rem var(--font-body);min-width:0;overflow-wrap:anywhere}
+.pf .pv.empty{color:var(--muted);font-weight:400}
+.card.editing{border-color:var(--accent)}
+.gh .ghost{font-weight:600}
+.scrim.light{background:rgba(10,11,25,.25)}
+.tour{text-align:left;padding:4px 2px 2px}
+.tour h2{font:700 1.4rem var(--font-display);letter-spacing:-.02em;margin:0 0 6px}
+.tour p{margin:0}
+.tour-ic{display:grid;place-items:center;width:52px;height:52px;border-radius:17px;background:var(--accent-soft);color:var(--accent)}
+.tdots{display:flex;gap:6px;margin:16px 0 4px}
+.tdots i{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.tdots i.on{background:var(--accent);width:20px;border-radius:4px}
+.tour-hl{position:relative;z-index:60;animation:pulse 1.4s ease-in-out infinite}
+.tab.tour-hl{color:var(--accent)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(223,75,43,.55)}50%{box-shadow:0 0 0 10px rgba(223,75,43,0)}}
+.tab.tour-hl{border-radius:14px;background:var(--accent-soft)}
+.sheet.tourmode{bottom:auto;top:max(14px,env(safe-area-inset-top,0px));border-radius:26px;width:min(calc(100% - 24px),500px);max-height:70vh;animation:fade .25s ease both;box-shadow:0 18px 50px rgba(10,11,25,.3)}
+.sheet.tourmode .grab{display:none}
+body.touring .tabs{z-index:35}
+body.touring .kidbtn.tour-hl{z-index:45}
 </style>
 </head>
 <body>
@@ -378,7 +402,7 @@ var PF=[['name','Name','Emma Sophie Müller'],['geb','Geboren am','2025-01-15'],
 ['gew','Gewicht','3.450 g'],['gr','Größe','52 cm'],['kopf','Kopfumfang','34 cm'],['blut','Blutgruppe','A positiv'],
 ['haar','Haare','Dunkelbraun'],['aug','Augen','Blau'],['eltern','Eltern','Sarah & Max Müller']];
 
-var S={tab:'home',filter:'alle',msForm:false,add:null,mem:[],ms:[],profile:{},nextId:100,music:'spieluhr',musicName:'',sample:true,kids:[],cur:'',filmMode:'leben',ritYear:0,ritQ:'',lt:null,iv:0};
+var S={tab:'home',filter:'alle',msForm:false,add:null,mem:[],ms:[],profile:{},nextId:100,music:'spieluhr',musicName:'',sample:true,kids:[],cur:'',pfEdit:false,filmMode:'leben',ritYear:0,ritQ:'',lt:null,iv:0};
 
 /* ---------- Mehrere Kinder: S.mem, S.ms, S.profile zeigen immer auf das gewählte Kind ---------- */
 function curKid(){for(var i=0;i<S.kids.length;i++)if(S.kids[i].kid===S.cur)return S.kids[i];return S.kids[0]}
@@ -543,9 +567,9 @@ function msHTML(){
   var out=topHTML()+'<h1>Meilensteine</h1>'
    +'<div class="ring"><svg width="96" height="96" viewBox="0 0 100 100" role="img" aria-label="'+done+' von '+tot+' erreicht"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--line)" stroke-width="9"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--accent)" stroke-width="9" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 50 50)"/><text x="50" y="56" text-anchor="middle" style="fill:var(--ink);font:700 24px var(--font-display)">'+done+'</text></svg>'
    +'<div><p><strong>'+done+' von '+tot+'</strong> erreicht</p><p class="tag">Noch '+op.length+' offen</p></div></div>';
-  out+='<h2 class="h2">Offen</h2>';
+  out+='<h2 class="h2">Offen</h2><p class="tag" style="margin:-6px 0 10px">Tippe auf einen Meilenstein, um ein Foto, Video oder eine Sprachnachricht dazu zu speichern.</p>';
   op.forEach(function(m){
-    out+='<div class="ms"><span class="mk">'+ic('star',18)+'</span><div><h3>'+esc(m.label)+(m.custom?'<span class="own">Eigener</span>':'')+'</h3><p class="meta">'+esc(m.when)+'</p></div><div style="display:flex;gap:6px">'
+    out+='<div class="ms"><span class="mk">'+ic('star',18)+'</span><div class="ms-open" role="button" tabindex="0" data-act="ms-moment" data-id="'+m.id+'" title="Moment zu diesem Meilenstein anlegen"><h3>'+esc(m.label)+(m.custom?'<span class="own">Eigener</span>':'')+'</h3><p class="meta">'+esc(m.when)+'</p></div><div style="display:flex;gap:6px">'
      +(m.custom?'<button class="icon-btn" data-act="ms-del" data-id="'+m.id+'" aria-label="Meilenstein löschen">'+ic('trash',16)+'</button>':'')
      +'<button class="mini" data-act="ms-done" data-id="'+m.id+'">Erreicht</button></div></div>';
   });
@@ -568,9 +592,12 @@ function profileHTML(){
   var out=topHTML()
    +'<div class="avatar" aria-hidden="true">'+esc(first().charAt(0).toUpperCase())+'</div><h1>'+esc(p.name||'Dein Baby')+'</h1><p class="lede">'+(gebTxt?'Geboren am '+gebTxt:'Trage unten den Geburtstag ein.')+'</p>'
    +'<div class="facts"><span class="pill">'+ageText(TODAY)+'</span><span class="pill n">'+S.mem.length+' Momente</span><span class="pill n">'+doneCount()+' von '+S.ms.length+' Meilensteinen</span></div>'
-   +'<h2 class="h2">Geburtsangaben</h2><div class="card">'
-   +PF.map(function(f){return '<div class="pf"><label for="pf-'+f[0]+'">'+f[1]+'</label><input id="pf-'+f[0]+'" data-pf="'+f[0]+'"'+(f[0]==='geb'?' type="date" max="'+iso(TODAY)+'"':' placeholder="'+esc(f[2])+'"')+' value="'+esc(p[f[0]])+'"></div>'}).join('')
-   +'</div><p class="note">'+(S.sample?'Beispieldaten. ':'')+'Tippe in ein Feld, um es zu ändern. Alles wird automatisch gespeichert.</p>'
+   +'<div class="gh" style="margin:30px 0 12px">Geburtsangaben'+(S.pfEdit?'':'<button class="ghost" style="padding:7px 12px" data-act="pf-edit">Bearbeiten</button>')+'</div><div class="card'+(S.pfEdit?' editing':'')+'">'
+   +PF.map(function(f){
+     if(!S.pfEdit){var v=f[0]==='geb'?gebTxt:p[f[0]];return '<div class="pf"><label>'+f[1]+'</label><span class="pv'+(v?'':' empty')+'">'+esc(v||'Noch leer')+'</span></div>'}
+     return '<div class="pf"><label for="pf-'+f[0]+'">'+f[1]+'</label><input id="pf-'+f[0]+'"'+(f[0]==='geb'?' type="date" max="'+iso(TODAY)+'"':' placeholder="'+esc(f[2])+'"')+' value="'+esc(p[f[0]])+'"></div>'}).join('')
+   +'</div>'+(S.pfEdit?'<div class="btns"><button class="ghost main" data-act="pf-save">Speichern</button><button class="ghost" data-act="pf-cancel">Abbrechen</button></div>':'')
+   +(S.sample?'<p class="note">Beispieldaten.</p>':'')
    +'<h2 class="h2">Meine Geschichte</h2><div class="card pad"><ol class="story">'
    +'<li><strong>Geburt</strong><span>'+[gebTxt,p.zeit,p.ort].filter(Boolean).map(esc).join(' · ')+'</span>'
    +((p.gew||p.gr||p.kopf)?'<p>'+[p.gew,p.gr,p.kopf?'Kopfumfang '+p.kopf:''].filter(Boolean).map(esc).join(', ')+'</p>':'')+'</li>';
@@ -587,6 +614,7 @@ function profileHTML(){
    +(S.sample?'':'<button class="ghost" data-act="sample" data-confirm="Wirklich? Ersetzt alles">Beispieldaten laden</button>')
    +(S.kids.length>1?'<button class="ghost warn" data-act="kid-del" data-confirm="'+esc(first())+' wirklich entfernen?">'+ic('trash',16)+esc(first())+' entfernen</button>':'')
    +'<button class="ghost warn" data-act="fresh" data-confirm="Wirklich alles löschen?">'+(S.sample?'Mit eigenen Daten starten':(S.kids.length>1?'Alle Kinder löschen und neu starten':'Alles löschen und neu starten'))+'</button></div>'
+   +'<div class="btns"><button class="ghost" data-act="tour">'+ic('book',16)+'Anleitung ansehen</button></div>'
    +(installEvt?'<div class="btns"><button class="ghost" data-act="install">'+ic('phone',16)+'Als App installieren</button></div>':'')
    +'</div>';
   return out;
@@ -1166,6 +1194,29 @@ function growthLine(){var ms=R().measures.filter(function(x){return x.cm!=null})
 function ivPairs(I,max,Y){var qs=ivQs(Y,I),out=[];qs.forEach(function(q){if(out.length<max&&I.answers[q[0]])out.push([qText(q,Y),I.answers[q[0]]])});return out}
 function excerpt(t,n){t=String(t||'');return t.length>n?t.slice(0,n).replace(/\s+\S*$/,'')+' …':t}
 
+/* ---------- Kurze Anleitung ---------- */
+var TOUR={i:0,steps:[
+ {sel:'.fab',icon:'plus',t:'Neuen Moment festhalten',d:'Mit dem roten Plus speicherst du ein Foto, ein Video oder eine Sprachnachricht. Du kannst direkt die Kamera öffnen oder eine Datei vom Handy wählen und das Datum auch nachträglich ändern.'},
+ {tab:'home',icon:'heart',t:'Momente',d:'Hier stehen alle Momente nach Lebensmonaten sortiert. Oben filterst du nach Fotos, Videos, Sprache oder Meilensteinen. Tippe einen Moment an, um ihn groß zu sehen, zu bearbeiten oder zu löschen.'},
+ {tab:'ms',icon:'award',t:'Meilensteine',d:'Erstes Lächeln, erste Schritte und vieles mehr. Tippe auf einen Meilenstein, um ein Foto oder Video dazu zu speichern. Eigene Meilensteine kannst du auch anlegen.'},
+ {tab:'rit',icon:'repeat',t:'Rituale',d:'Jeden Monat ein Foto am selben Ort, zu jedem Geburtstag ein Brief und ein kleines Interview, dazu Größe und Gewicht. Die rote Zahl zeigt, was gerade ansteht. Die Termine kannst du auch in deinen Kalender holen.'},
+ {tab:'profile',icon:'book',t:'Steckbrief',d:'Geburtsangaben und die Lebensgeschichte deines Kindes. Mit „Bearbeiten“ änderst du die Angaben. Ganz unten kannst du eine Sicherung herunterladen, das solltest du ab und zu tun.'},
+ {tab:'film',icon:'film',t:'Film',d:'Aus allen Momenten entsteht automatisch ein Film, mit Musik und als Video speicherbar. Im Zeitraffer siehst du dein Kind von Monatsfoto zu Monatsfoto wachsen.'},
+ {sel:'.kidbtn',icon:'plus',t:'Mehrere Kinder',d:'Oben rechts wechselst du zwischen deinen Kindern oder legst ein weiteres Kind an. Jedes Kind hat eigene Momente, Rituale und einen eigenen Film.'}
+]};
+function tourMark(){
+  var old=document.querySelectorAll('.tour-hl');for(var i=0;i<old.length;i++)old[i].classList.remove('tour-hl');
+  var st=TOUR.steps[TOUR.i],el=st.tab?document.querySelector('.tab[data-tab="'+st.tab+'"]'):document.querySelector(st.sel);
+  if(el)el.classList.add('tour-hl');
+}
+function tourOpen(i){
+  TOUR.i=Math.max(0,Math.min(i,TOUR.steps.length-1));var st=TOUR.steps[TOUR.i],n=TOUR.steps.length,last=TOUR.i===n-1;
+  var dots='';for(var k=0;k<n;k++)dots+='<i'+(k===TOUR.i?' class="on"':'')+'></i>';
+  openSheet('<div class="grab"></div><div class="tour"><span class="tour-ic">'+ic(st.icon,26)+'</span><p class="tag" style="margin:12px 0 2px">Schritt '+(TOUR.i+1)+' von '+n+'</p><h2>'+st.t+'</h2><p>'+st.d+'</p><div class="tdots">'+dots+'</div>'
+   +'<div class="btns" style="justify-content:space-between"><button class="ghost" data-act="tour-end">Überspringen</button><span style="display:flex;gap:8px">'+(TOUR.i?'<button class="ghost" data-act="tour-back">Zurück</button>':'')+'<button class="ghost main" data-act="'+(last?'tour-end':'tour-next')+'">'+(last?'Los geht’s':'Weiter')+'</button></span></div></div>');
+  $('scrim').classList.add('light');$('sheet').classList.add('tourmode');document.body.classList.add('touring');tourMark();
+}
+function tourEnd(){closeSheet()}
 /* ---------- Erster Start ---------- */
 function welcomeHTML(){
   return '<div class="top"><span class="brand">momenli<i>.</i></span><span class="tag">Jeder Moment zählt</span></div>'
@@ -1192,9 +1243,11 @@ function render(){
   if(S.tab==='profile')showUsage();
   if(S.tab==='rit'){var rc=$('rit-chips'),pc=rc&&rc.querySelector('[aria-pressed="true"]');if(pc)rc.scrollLeft=pc.offsetLeft-rc.offsetLeft-16}
 }
-function setTab(t){S.tab=t;render();window.scrollTo(0,0)}
+function setTab(t){if(t!=='profile')S.pfEdit=false;S.tab=t;render();window.scrollTo(0,0)}
 function openSheet(html){$('sheet').innerHTML=html;$('sheet').hidden=false;$('scrim').hidden=false;document.body.classList.add('lock');var f=$('sheet').querySelector('[data-focus]');if(f)f.focus()}
 function closeSheet(){
+  var o=document.querySelectorAll('.tour-hl');for(var q=0;q<o.length;q++)o[q].classList.remove('tour-hl');
+  $('scrim').classList.remove('light');$('sheet').classList.remove('tourmode');document.body.classList.remove('touring');
   if(X)exportCancel();
   camStop();
   recStop(true);
@@ -1208,7 +1261,7 @@ function detailHTML(m){
   var ms=m.ms?S.ms.filter(function(x){return x.id===m.ms})[0]:null,media='';
   if(m.url&&m.type==='v')media='<video src="'+m.url+'" controls playsinline preload="metadata"'+(m.img?' poster="'+m.img+'"':'')+'></video>';
   else{
-    media=cover(m,'lg');
+    media=m.img?'<img class="photo" src="'+m.img+'" alt="'+esc(m.title)+'">':cover(m,'lg');
     if(m.url&&m.type==='s')media+='<audio src="'+m.url+'" controls preload="metadata"></audio>';
     else if(m.type!=='f'&&!m.img){var bars='';for(var i=0;i<34;i++)bars+='<i style="height:'+(18+Math.abs(Math.sin(i*.7+m.id)*70+Math.cos(i*1.9)*12))+'%"></i>';
       media+='<div class="wave" aria-hidden="true">'+bars+'</div><p class="meta">'+typeName(m.type)+' · '+mmss(m.dur*1000)+' · Beispiel ohne Datei</p>'}
@@ -1217,13 +1270,16 @@ function detailHTML(m){
    +'<div class="det">'+media+'<h2>'+esc(m.title)+'</h2><p class="meta">'+ageText(m.date)+' alt</p>'
    +(m.note?'<p class="nt">'+esc(m.note)+'</p>':'')
    +'<div class="pills"><span class="pill n">'+ic(typeIcon(m.type),14)+typeName(m.type)+'</span>'+(ms?'<span class="pill">'+ic('star',14)+'Meilenstein: '+esc(ms.label)+'</span>':'')+(m.rit?'<span class="pill">'+ic('repeat',14)+esc(ritLabel(m.rit))+'</span>':'')+'</div>'
-   +'<div class="btns" style="margin-top:18px">'
+   +'<div class="btns" style="margin-top:18px"><button class="ghost main" data-act="mem-edit" data-id="'+m.id+'">Bearbeiten</button>'
    +(m.auto?'<button class="ghost" data-act="ms-undo" data-id="'+m.id+'">Meilenstein zurücknehmen</button>':'')
    +'<button class="ghost warn" data-act="mem-del" data-id="'+m.id+'" data-confirm="Wirklich löschen?">'+ic('trash',16)+'Moment löschen</button></div></div>';
 }
 
 /* ---------- Neuer Moment ---------- */
-function newAdd(t,rit){return {type:t||'f',img:null,blob:null,file:'',dur:0,busy:false,rit:rit||''}}
+function newAdd(t,rit,ms){return {type:t||'f',img:null,blob:null,file:'',dur:0,busy:false,rit:rit||'',ms:ms||''}}
+function editAdd(m){var A=newAdd(m.type,m.rit,m.ms);A.edit=m.id;A.img=m.img;A.dur=m.dur||0;A.file=m.media?(typeName(m.type)+' gespeichert'+(m.dur?' · '+mmss(m.dur*1000):'')+'. Tippen zum Ersetzen.'):'';return A}
+function msLabel(id){var x=S.ms.filter(function(q){return q.id===id})[0];return x?x.label:''}
+function autoTitle(){var A=S.add;return A.rit?ritLabel(A.rit):(A.ms?msLabel(A.ms):'')}
 function ritOptions(sel){
   var o='<option value="">Kein wiederkehrendes Foto</option>',mo=ageMonths(TODAY),y=maxYear();
   for(var j=Math.max(0,Math.min(mo,mMax())-11);j<=Math.min(mMax(),mo+1);j++){var t='monat-'+j;if(!ritMem(t)||t===sel)o+='<option value="'+t+'"'+(t===sel?' selected':'')+'>'+ritLabel(t)+'</option>'}
@@ -1274,16 +1330,17 @@ function camShot(){
   S.add.img=c.toDataURL('image/jpeg',.85);S.add.file='';camStop();refreshCap();
 }
 function addHTML(){
-  var pend=S.ms.filter(function(m){return !memOf(m.id)}).map(function(m){return '<option value="'+m.id+'">'+esc(m.label)+'</option>'}).join('');
+  var A=S.add,E=A.edit?memById(A.edit):null,at=autoTitle();
+  var pend=S.ms.filter(function(m){var o=memOf(m.id);return !o||(E&&o===E)||m.id===A.ms}).map(function(m){return '<option value="'+m.id+'"'+(m.id===A.ms?' selected':'')+'>'+esc(m.label)+'</option>'}).join('');
   var seg=[['f','Foto'],['v','Video'],['s','Sprache']].map(function(x){return '<button class="segb" data-act="add-type" data-type="'+x[0]+'" aria-pressed="'+(S.add.type===x[0])+'">'+ic(typeIcon(x[0]),22)+x[1]+'</button>'}).join('');
-  return '<div class="grab"></div><div class="sh-head"><h2>Neuer Moment</h2><button class="icon-btn" data-act="close" aria-label="Schließen">'+ic('x',18)+'</button></div>'
-   +'<div class="seg" role="group" aria-label="Art des Moments">'+seg+'</div><div id="cap">'+capHTML()+'</div>'
-   +'<label class="fl" for="a-title">Titel</label><input class="fld" id="a-title" data-focus placeholder="z. B. Erstes Mal auf der Schaukel" value="'+esc(S.add.rit?ritLabel(S.add.rit):'')+'">'
-   +'<label class="fl" for="a-date">Datum</label><input class="fld" type="date" id="a-date" value="'+ritDefaultDate(S.add.rit)+'" max="'+iso(TODAY)+'">'
-   +'<label class="fl" for="a-note">Notiz</label><textarea class="fld" id="a-note" placeholder="Was macht diesen Moment besonders?"></textarea>'
+  return '<div class="grab"></div><div class="sh-head"><h2>'+(E?'Moment bearbeiten':'Neuer Moment')+'</h2><button class="icon-btn" data-act="close" aria-label="Schließen">'+ic('x',18)+'</button></div>'
+   +(E?'':'<div class="seg" role="group" aria-label="Art des Moments">'+seg+'</div>')+'<div id="cap">'+capHTML()+'</div>'
+   +'<label class="fl" for="a-title">Titel</label><input class="fld" id="a-title"'+(E?'':' data-focus')+' placeholder="z. B. Erstes Mal auf der Schaukel" value="'+esc(E?E.title:at)+'" data-auto="'+esc(E?'':at)+'">'
+   +'<label class="fl" for="a-date">Datum</label><input class="fld" type="date" id="a-date" value="'+(E?iso(E.date):ritDefaultDate(A.rit))+'" max="'+iso(TODAY)+'">'
+   +'<label class="fl" for="a-note">Notiz</label><textarea class="fld" id="a-note" placeholder="Was macht diesen Moment besonders?">'+esc(E?E.note:'')+'</textarea>'
    +'<label class="fl" for="a-ms">Meilenstein (optional)</label><select class="fld" id="a-ms"><option value="">Kein Meilenstein</option>'+pend+'</select>'
    +'<label class="fl" for="a-rit">Wiederkehrendes Foto (optional)</label><select class="fld" id="a-rit">'+ritOptions(S.add.rit)+'</select>'
-   +'<p class="err" id="a-err" hidden>Bitte gib einen Titel ein.</p><button class="primary" data-act="save">Moment speichern</button>';
+   +'<p class="err" id="a-err" hidden>Bitte gib einen Titel ein.</p><button class="primary" data-act="save">'+(E?'Änderungen speichern':'Moment speichern')+'</button>';
 }
 function shrink(file,cb){
   var url=URL.createObjectURL(file),im=new Image();
@@ -1340,8 +1397,16 @@ async function saveMoment(){
   var title=$('a-title').value.trim();
   if(!title){$('a-err').hidden=false;$('a-title').focus();return}
   if(REC){toast('Bitte beende zuerst die Aufnahme.');return}
-  var A=S.add,id=S.nextId++,d=parseISO($('a-date').value)||TODAY;
+  var A=S.add,d=parseISO($('a-date').value)||TODAY;
   if(d>TODAY)d=TODAY;
+  if(A.edit){
+    var em=memById(A.edit);if(!em){closeSheet();return}
+    em.title=title;em.date=d;em.note=$('a-note').value.trim();em.ms=$('a-ms').value;em.rit=$('a-rit').value;em.img=A.img;em.dur=A.dur||em.dur;em.auto=false;
+    if(A.blob){try{await dbPut('media:'+em.id,A.blob);em.media=!!DB;em.mime=A.blob.type||''}catch(e){toast('Die Datei ist zu groß für den Speicher.')}
+      if(em.url)URL.revokeObjectURL(em.url);em.url=URL.createObjectURL(A.blob)}
+    save();closeSheet();render();openSheet(detailHTML(em));toast('Änderungen gespeichert');return;
+  }
+  var id=S.nextId++;
   var m={id:id,date:d,type:A.type,title:title,note:$('a-note').value.trim(),ms:$('a-ms').value,img:A.img,dur:A.dur||0,auto:false,media:false,rit:$('a-rit').value};
   if(A.blob){
     try{await dbPut('media:'+id,A.blob);m.media=!!DB;m.mime=A.blob.type||'';}catch(e){toast('Die Datei ist zu groß für den Speicher.');}
@@ -1425,6 +1490,19 @@ document.addEventListener('click',function(e){
   else if(a==='msr-del'){var mid=b.getAttribute('data-v');R().measures=R().measures.filter(function(x){return x.id!==mid});save();render()}
   else if(a==='ics'){download(new Blob([icsFile()],{type:'text/calendar'}),'Momenli_Erinnerungen_'+first()+'.ics');toast('Kalenderdatei geladen. Öffne sie, um die Termine zu übernehmen.')}
   else if(a==='save')saveMoment();
+  else if(a==='ms-moment'){closeSheet();S.add=newAdd('f','',id);openSheet(addHTML())}
+  else if(a==='mem-edit'){var me=memById(id);if(!me)return;closeSheet();S.add=editAdd(me);openSheet(addHTML())}
+  else if(a==='pf-edit'){S.pfEdit=true;render();var pn=$('pf-name');if(pn)pn.focus()}
+  else if(a==='pf-cancel'){S.pfEdit=false;render()}
+  else if(a==='pf-save'){
+    var ng=$('pf-geb').value;if(!parseISO(ng)){toast('Bitte wähle einen gültigen Geburtstag.');return}
+    PF.forEach(function(f){var el=$('pf-'+f[0]);if(el)S.profile[f[0]]=el.value.trim()});
+    setBirth();S.pfEdit=false;save();render();toast('Steckbrief gespeichert');
+  }
+  else if(a==='tour'){tourOpen(0)}
+  else if(a==='tour-next'){tourOpen(TOUR.i+1)}
+  else if(a==='tour-back'){tourOpen(TOUR.i-1)}
+  else if(a==='tour-end'){tourEnd()}
   else if(a==='mem-del'){
     var dm=memById(id);if(!dm)return;
     if(dm.url)URL.revokeObjectURL(dm.url);
@@ -1453,9 +1531,9 @@ document.addEventListener('click',function(e){
   else if(a==='export')exportFilm();
   else if(a==='export-cancel'){exportCancel();closeSheet();toast('Abgebrochen')}
   else if(a==='kids')openSheet(kidsHTML());
-  else if(a==='kid'){if(id!==S.cur){useKid(id);save()}closeSheet();S.tab=S.tab==='film'?'film':S.tab;render();window.scrollTo(0,0);toast(first()+' ausgewählt')}
+  else if(a==='kid'){S.pfEdit=false;if(id!==S.cur){useKid(id);save()}closeSheet();S.tab=S.tab==='film'?'film':S.tab;render();window.scrollTo(0,0);toast(first()+' ausgewählt')}
   else if(a==='kid-new'){
-    syncKid();var nk=newKid();S.kids.push(nk);useKid(nk.kid);save();closeSheet();setTab('profile');toast('Neues Kind angelegt. Trag Name und Geburtstag ein.');
+    syncKid();var nk=newKid();S.kids.push(nk);useKid(nk.kid);save();closeSheet();S.pfEdit=true;setTab('profile');toast('Neues Kind angelegt. Trag Name und Geburtstag ein.');
     var nf=$('pf-name');if(nf)nf.focus();
   }
   else if(a==='kid-del'&&S.kids.length>1){
@@ -1468,9 +1546,9 @@ document.addEventListener('click',function(e){
     var wn=$('w-name').value.trim(),wg=$('w-geb').value,we=$('w-err');
     if(!wn){we.textContent='Bitte gib einen Namen ein.';we.hidden=false;$('w-name').focus();return}
     if(!parseISO(wg)){we.textContent='Bitte wähle den Geburtstag aus.';we.hidden=false;$('w-geb').focus();return}
-    S.profile.name=wn;S.profile.geb=wg;setBirth();S.tab='home';save();render();window.scrollTo(0,0);toast('Schön, dass ihr da seid! Mit dem Plus legst du den ersten Moment an.');
+    S.profile.name=wn;S.profile.geb=wg;setBirth();S.tab='home';save();render();window.scrollTo(0,0);setTimeout(function(){tourOpen(0)},350);
   }
-  else if(a==='welcome-sample')resetAll(true);
+  else if(a==='welcome-sample'){resetAll(true);setTimeout(function(){tourOpen(0)},450)}
   else if(a==='backup')backup();
   else if(a==='sample')resetAll(true);
   else if(a==='fresh')resetAll(false);
@@ -1480,14 +1558,19 @@ document.addEventListener('input',function(e){
   var t=e.target;
   if(t.id==='fscrub')filmSeek(t.value);
   else if(t.id==='cam-o'){var cg=$('cam-g');if(cg)cg.style.opacity=t.value/100}
-  else if(t.hasAttribute&&t.hasAttribute('data-pf')&&t.type!=='date'){S.profile[t.getAttribute('data-pf')]=t.value;save()}
+
 });
 document.addEventListener('change',function(e){
   var t=e.target;
   if(t.id==='m-on'){R().monthly=t.checked;save();render();toast(t.checked?'Monatsfotos laufen bis zum 18. Geburtstag weiter':'Monatsfotos nur im ersten Jahr');return}
-  if(t.id==='a-rit'){if(S.add)S.add.rit=t.value;refreshCap();var ti=$('a-title');if(ti&&(!ti.value.trim()||/^(Monatsfoto|Neugeborenenfoto|Geburtstagsfoto)/.test(ti.value)))ti.value=t.value?ritLabel(t.value):'';if(t.value)$('a-date').value=ritDefaultDate(t.value);return}
-  if(t.getAttribute&&t.getAttribute('data-pf')==='geb'){if(parseISO(t.value)){S.profile.geb=t.value;setBirth();save();render()}return}
-  if(t.getAttribute&&t.hasAttribute('data-pf'))return;
+  if(t.id==='a-rit'||t.id==='a-ms'){
+    if(S.add){if(t.id==='a-rit')S.add.rit=t.value;else S.add.ms=t.value}
+    if(t.id==='a-rit')refreshCap();
+    var ti=$('a-title'),nt=t.value?(t.id==='a-rit'?ritLabel(t.value):msLabel(t.value)):autoTitle();
+    if(ti&&(!ti.value.trim()||ti.value===ti.getAttribute('data-auto'))){ti.value=nt;ti.setAttribute('data-auto',nt)}
+    if(t.id==='a-rit'&&t.value&&!(S.add&&S.add.edit))$('a-date').value=ritDefaultDate(t.value);
+    return}
+  if(t.id&&t.id.indexOf('pf-')===0)return;
   if(!t.files||!t.files[0])return;
   var f=t.files[0];
   if(t.id==='imp'){restore(f);t.value='';return}
@@ -1497,6 +1580,7 @@ document.addEventListener('change',function(e){
   if(S.add.type==='f'){S.add.busy=true;refreshCap();var A=S.add;shrink(f,function(url){A.busy=false;A.img=url;if(!url)toast('Dieses Bild kann der Browser nicht lesen.');refreshCap()})}
   else setMedia(f,f.name);
 });
+document.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.getAttribute&&e.target.getAttribute('role')==='button'){e.preventDefault();e.target.click()}});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('sheet').hidden)closeSheet()});
 window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();installEvt=e;if(S.tab==='profile')render()});
 
