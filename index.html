@@ -478,7 +478,7 @@ function snapshot(){
     kids:S.kids.map(function(k){return {kid:k.kid,profile:k.profile,ms:k.ms,sample:!!k.sample,
       rit:JSON.parse(JSON.stringify(k.rit||emptyRit(),function(key,v){return key==='url'?undefined:v})),
       del:k.del||{},
-      mem:k.mem.map(function(m){return {idea:m.idea||'',upd:m.upd||0,id:m.id,date:iso(m.date),type:m.type,title:m.title,note:m.note,ms:m.ms,img:m.img,dur:m.dur,auto:m.auto,media:!!m.media,mime:m.mime||'',fname:m.fname||'',rit:m.rit||''}})}})};
+      mem:k.mem.map(function(m){return {idea:m.idea||'',upd:m.upd||0,id:m.id,date:iso(m.date),type:m.type,title:m.title,note:m.note,ms:m.ms,img:m.img,hq:!!m.hq,dur:m.dur,auto:m.auto,media:!!m.media,mime:m.mime||'',fname:m.fname||'',rit:m.rit||''}})}})};
 }
 function applySnap(o){
   S.nextId=o.nextId||100;S.music=o.music||'spieluhr';S.musicName=o.musicName||'';
@@ -1337,6 +1337,7 @@ function closeSheet(){
 }
 var tt=null;
 function toast(msg){var t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(tt);tt=setTimeout(function(){t.hidden=true},2600)}
+function safeName(t){return String(t).replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/Ä/g,'Ae').replace(/Ö/g,'Oe').replace(/Ü/g,'Ue').replace(/ß/g,'ss').replace(/[^A-Za-z0-9._-]+/g,'_')}
 function download(blob,name){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},5000)}
 
 function detailHTML(m){
@@ -1353,6 +1354,7 @@ function detailHTML(m){
    +(m.note?'<p class="nt">'+esc(m.note)+'</p>':'')
    +'<div class="pills"><span class="pill n">'+ic(typeIcon(m.type),14)+typeName(m.type)+'</span>'+(ms?'<span class="pill">'+ic('star',14)+'Meilenstein: '+esc(ms.label)+'</span>':'')+(m.rit?'<span class="pill">'+ic('repeat',14)+esc(ritLabel(m.rit))+'</span>':'')+'</div>'
    +'<div class="btns" style="margin-top:18px"><button class="ghost main" data-act="mem-edit" data-id="'+m.id+'">Bearbeiten</button>'
+   +(m.type==='f'&&m.img?'<button class="ghost" data-act="photo-dl" data-id="'+m.id+'">'+ic('down',16)+'Foto speichern</button>':'')
    +(m.auto?'<button class="ghost" data-act="ms-undo" data-id="'+m.id+'">Meilenstein zurücknehmen</button>':'')
    +'<button class="ghost warn" data-act="mem-del" data-id="'+m.id+'" data-confirm="Wirklich löschen?">'+ic('trash',16)+'Moment löschen</button></div></div>';
 }
@@ -1406,10 +1408,11 @@ function camShot(){
   var v=$('cam-v');if(!v||!v.videoWidth)return;
   var vw=v.videoWidth,vh=v.videoHeight,r=3/4,cw,ch;/* wie angezeigt auf 3:4 zuschneiden */
   if(vw/vh>r){ch=vh;cw=vh*r}else{cw=vw;ch=vw/r}
-  var sc=Math.min(1,1280/ch),c=document.createElement('canvas');c.width=Math.round(cw*sc);c.height=Math.round(ch*sc);
-  var ctx=c.getContext('2d');if(CAM&&CAM.facing==='user'){ctx.translate(c.width,0);ctx.scale(-1,1)}
-  ctx.drawImage(v,(vw-cw)/2,(vh-ch)/2,cw,ch,0,0,c.width,c.height);
-  S.add.img=c.toDataURL('image/jpeg',.85);S.add.file='';camStop();refreshCap();
+  var full=document.createElement('canvas');full.width=Math.round(cw);full.height=Math.round(ch);
+  var ctx=full.getContext('2d');if(CAM&&CAM.facing==='user'){ctx.translate(full.width,0);ctx.scale(-1,1)}
+  ctx.drawImage(v,(vw-cw)/2,(vh-ch)/2,cw,ch,0,0,full.width,full.height);
+  var A=S.add;A.img=scaleTo(full,full.width,full.height,PREV_PX).toDataURL('image/jpeg',.85);A.file='';A.hq=null;A.newPhoto=true;camStop();refreshCap();
+  hqBlob(full,full.width,full.height).then(function(b){if(S.add===A)A.hq=b});
 }
 function addHTML(){
   var A=S.add,E=A.edit?memById(A.edit):null,at=autoTitle();
@@ -1424,11 +1427,15 @@ function addHTML(){
    +'<label class="fl" for="a-rit">Wiederkehrendes Foto (optional)</label><select class="fld" id="a-rit">'+ritOptions(S.add.rit)+'</select>'
    +'<p class="err" id="a-err" hidden>Bitte gib einen Titel ein.</p><button class="primary" data-act="save">'+(E?'Änderungen speichern':'Moment speichern')+'</button>';
 }
+/* Vorschau (max. 1280 px, im Speicherstand) und Druckfassung (max. 2400 px, eigene Datei) */
+var PREV_PX=1280,HQ_PX=2400;
+function scaleTo(src,w,h,max,flip){var s=Math.min(1,max/Math.max(w,h)),c=document.createElement('canvas');c.width=Math.round(w*s);c.height=Math.round(h*s);var x=c.getContext('2d');if(flip){x.translate(c.width,0);x.scale(-1,1)}x.drawImage(src,0,0,c.width,c.height);return c}
+function hqBlob(src,w,h,flip){return new Promise(function(res){if(Math.max(w,h)<=PREV_PX){res(null);return}try{scaleTo(src,w,h,HQ_PX,flip).toBlob(function(b){res(b||null)},'image/jpeg',.9)}catch(e){res(null)}})}
 function shrink(file,cb){
   var url=URL.createObjectURL(file),im=new Image();
   im.onload=function(){
-    try{var s=Math.min(1,1280/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.85))}catch(e){cb(null)}
-    URL.revokeObjectURL(url);
+    var w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;
+    try{var prev=scaleTo(im,w,h,PREV_PX).toDataURL('image/jpeg',.85);hqBlob(im,w,h).then(function(hq){URL.revokeObjectURL(url);cb(prev,hq)})}catch(e){URL.revokeObjectURL(url);cb(null,null)}
   };
   im.onerror=function(){URL.revokeObjectURL(url);cb(null)};im.src=url;
 }
@@ -1483,6 +1490,7 @@ async function saveMoment(){
   if(d>TODAY)d=TODAY;
   if(A.edit){
     var em=memById(A.edit);if(!em){closeSheet();return}
+    if(A.newPhoto){if(A.hq){try{await dbPut('photo:'+em.id,A.hq);em.hq=true}catch(e){em.hq=false}}else{em.hq=false;dbDel('photo:'+em.id).catch(function(){})}hqForget(em.id)}
     em.upd=Date.now();em.title=title;em.date=d;em.note=$('a-note').value.trim();em.ms=$('a-ms').value;em.rit=$('a-rit').value;em.img=A.img;em.dur=A.dur||em.dur;em.auto=false;
     if(A.blob){try{await dbPut('media:'+em.id,A.blob);em.media=!!DB;em.mime=A.blob.type||''}catch(e){toast('Die Datei ist zu groß für den Speicher.')}
       if(em.url)URL.revokeObjectURL(em.url);em.url=URL.createObjectURL(A.blob)}
@@ -1490,6 +1498,7 @@ async function saveMoment(){
   }
   var id=newId();
   var m={id:id,idea:A.idea||'',upd:Date.now(),date:d,type:A.type,title:title,note:$('a-note').value.trim(),ms:$('a-ms').value,img:A.img,dur:A.dur||0,auto:false,media:false,rit:$('a-rit').value};
+  if(A.hq&&A.type==='f'){try{await dbPut('photo:'+id,A.hq);m.hq=!!DB}catch(e){}}
   if(A.blob){
     try{await dbPut('media:'+id,A.blob);m.media=!!DB;m.mime=A.blob.type||'';}catch(e){toast('Die Datei ist zu groß für den Speicher.');}
     m.url=URL.createObjectURL(A.blob);
@@ -1497,16 +1506,28 @@ async function saveMoment(){
   S.mem.push(m);save();closeSheet();render();toast('Moment gespeichert');
 }
 
+async function photoDownload(m){
+  var b=null;if(m.hq){try{b=await dbGet('photo:'+m.id)}catch(e){}}
+  if(!b)b=await (await fetch(m.img)).blob();
+  download(b,'Momenli_'+iso(m.date)+'_'+safeName(m.title||'Foto').slice(0,40)+'.jpg');
+  toast(m.hq?'Foto in Druckqualität gespeichert':'Foto gespeichert');
+}
 /* ---------- Sicherung ---------- */
 function blobToData(b){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result)};r.onerror=function(){rej(r.error)};r.readAsDataURL(b)})}
 function markDel(key){var k=curKid();k.del=k.del||{};k.del[key]=Date.now()}
-async function buildBackup(){
-    var media={};
+/* Welche Druckfotos der Partner schon hat (pro Gerät), damit die Abgleich-Datei klein bleibt */
+var HQS=null;
+async function hqsLoad(){if(!HQS){try{HQS=(await dbGet('hqsent'))||{}}catch(e){HQS={}}}return HQS}
+function hqsSave(){if(HQS)dbPut('hqsent',HQS).catch(function(){})}
+function hqForget(id){hqsLoad().then(function(h){delete h[id];hqsSave()})}
+async function buildBackup(forSync){
+    var media={},hq={},sent=forSync?await hqsLoad():{};
+    var hm=allMem();for(var h=0;h<hm.length;h++){var x=hm[h];if(x.hq&&!sent[x.id]){var pb=await dbGet('photo:'+x.id);if(pb){hq[x.id]=await blobToData(pb);if(forSync)sent[x.id]=1}}}
     var am=allMem();
     for(var i=0;i<am.length;i++){var m=am[i];if(m.media){var b=await dbGet('media:'+m.id);if(b)media[m.id]=await blobToData(b)}}
     var al=allLetters();for(var j=0;j<al.length;j++){if(al[j].mediaId){var lb=await dbGet('media:'+al[j].mediaId);if(lb)media[al[j].mediaId]=await blobToData(lb)}}
     var mu=await dbGet('music'),music=mu&&mu.blob?{name:mu.name,data:await blobToData(mu.blob)}:null;
-    return new Blob([JSON.stringify({app:'momenli',v:1,created:new Date().toISOString(),state:snapshot(),media:media,music:music})],{type:'application/json'});
+    return new Blob([JSON.stringify({app:'momenli',v:1,created:new Date().toISOString(),state:snapshot(),media:media,hq:hq,music:music})],{type:'application/json'});
 }
 async function backup(){
   toast('Sicherung wird erstellt …');
@@ -1516,7 +1537,7 @@ async function backup(){
 async function shareSync(){
   toast('Datei wird erstellt …');
   try{
-    var blob=await buildBackup(),name='Momenli_Abgleich_'+first().replace(/[^\wäöüÄÖÜß-]+/g,'_')+'_'+iso(new Date())+'.json';
+    var blob=await buildBackup(true);hqsSave();var name='Momenli_Abgleich_'+safeName(first())+'_'+iso(new Date())+'.json';
     var file=new File([blob],name,{type:'application/json'});
     if(navigator.canShare&&navigator.canShare({files:[file]})){
       try{await navigator.share({files:[file],title:'Momenli abgleichen',text:'Öffne Momenli und spiele diese Datei unter Steckbrief → Mit Partner abgleichen ein.'});toast('Geteilt');return}
@@ -1533,7 +1554,7 @@ async function mergeFile(file){
     if(!o||o.app!=='momenli'||!o.state)throw new Error('kein Momenli');
     if(isEmptyLocal()){await restore(file);return}
     syncKid();
-    var rs=o.state,rkids=rs.kids||[{kid:'k1',profile:rs.profile,ms:rs.ms,mem:rs.mem,sample:rs.sample}],media=o.media||{},need=[],added=0,changed=0,newKids=0;
+    var hs=await hqsLoad(),rs=o.state,rkids=rs.kids||[{kid:'k1',profile:rs.profile,ms:rs.ms,mem:rs.mem,sample:rs.sample}],media=o.media||{},need=[],added=0,changed=0,newKids=0;
     rkids.forEach(function(rk){
       if(rk.sample)return;
       var lk=S.kids.filter(function(k){return k.kid===rk.kid})[0];
@@ -1544,12 +1565,13 @@ async function mergeFile(file){
       lk.ms=lk.ms.filter(function(m){return !del['ms:'+m.id]});
       (rk.mem||[]).forEach(function(rm){
         if(del['mem:'+rm.id])return;
+        if(rm.hq)hs[rm.id]=1;else delete hs[rm.id];/* fehlt dem Partner das Druckfoto, schicken wir es beim nächsten Mal wieder mit */
         var i=-1;for(var q=0;q<lk.mem.length;q++)if(lk.mem[q].id===rm.id)i=q;
-        var nm={};for(var f in rm)nm[f]=rm[f];nm.date=parseISO(rm.date)||TODAY;
+        var nm={};for(var f in rm)nm[f]=rm[f];nm.date=parseISO(rm.date)||TODAY;nm.hq=false;
         if(i<0){lk.mem.push(nm);added++;if(rm.media)need.push(rm.id)}
-        else if(newer(rm,lk.mem[i])){if(lk.mem[i].url){nm.url=lk.mem[i].url}lk.mem[i]=nm;changed++;if(rm.media)need.push(rm.id)}
+        else if(newer(rm,lk.mem[i])){if(lk.mem[i].url){nm.url=lk.mem[i].url}if(lk.mem[i].hq){if(lk.mem[i].img===rm.img)nm.hq=true;else dbDel('photo:'+rm.id).catch(function(){})}lk.mem[i]=nm;changed++;if(rm.media)need.push(rm.id)}
       });
-      lk.mem=lk.mem.filter(function(m){if(del['mem:'+m.id]){if(m.url)URL.revokeObjectURL(m.url);return false}return true});
+      lk.mem=lk.mem.filter(function(m){if(del['mem:'+m.id]){if(m.url)URL.revokeObjectURL(m.url);if(m.hq)dbDel('photo:'+m.id).catch(function(){});return false}return true});
       var rr=rk.rit||emptyRit(),lr=lk.rit=lk.rit||emptyRit();
       ['letters','interviews'].forEach(function(t){lr[t]=lr[t]||{};for(var y in (rr[t]||{})){if(!lr[t][y]||newer(rr[t][y],lr[t][y])){var keepUrl=lr[t][y]&&lr[t][y].url;lr[t][y]=rr[t][y];if(t==='letters'&&rr[t][y].mediaId){need.push(rr[t][y].mediaId);if(keepUrl)URL.revokeObjectURL(keepUrl)}}}});
       (rr.measures||[]).forEach(function(x){if(!del['msr:'+x.id]&&!lr.measures.some(function(y){return y.id===x.id}))lr.measures.push(x)});
@@ -1557,6 +1579,10 @@ async function mergeFile(file){
       lr.hid=Object.assign({},rr.hid||{},lr.hid||{});
       (rr.qs||[]).forEach(function(x){if(!lr.qs.some(function(y){return y.id===x.id}))lr.qs.push(x)});
     });
+    var rhq=o.hq||{};
+    for(var hk in rhq){var hmem=allMem().filter(function(m){return String(m.id)===hk})[0];if(!hmem)continue;
+      try{await dbPut('photo:'+hk,await (await fetch(rhq[hk])).blob());hmem.hq=true;hs[hk]=1}catch(e){}}
+    hqsSave();
     for(var n=0;n<need.length;n++){var key=need[n];if(media[key]){var b=await (await fetch(media[key])).blob();await dbPut('media:'+key,b);
       allMem().forEach(function(m){if(String(m.id)===String(key)){if(m.url)URL.revokeObjectURL(m.url);m.url=URL.createObjectURL(b);m.media=true}});
       allLetters().forEach(function(L){if(String(L.mediaId)===String(key)){L.url=URL.createObjectURL(b)}})}}
@@ -1572,13 +1598,14 @@ async function restore(file){
     if(!o||o.app!=='momenli'||!o.state)throw new Error('kein Momenli');
     revokeAll();await dbClear();
     for(var k in (o.media||{})){var b=await (await fetch(o.media[k])).blob();await dbPut('media:'+k,b)}
+    HQS={};for(var hk in (o.hq||{})){await dbPut('photo:'+hk,await (await fetch(o.hq[hk])).blob());HQS[hk]=1}hqsSave();
     if(o.music&&o.music.data){var mb=await (await fetch(o.music.data)).blob();await dbPut('music',{blob:mb,name:o.music.name})}
-    applySnap(o.state);await dbPut('state',snapshot());await loadMediaUrls();
+    applySnap(o.state);allMem().forEach(function(m){m.hq=!!HQS[m.id]});await dbPut('state',snapshot());await loadMediaUrls();
     S.tab='home';render();toast('Sicherung eingespielt: '+S.kids.length+(S.kids.length===1?' Kind, ':' Kinder, ')+allMem().length+' Momente');
   }catch(e){toast('Diese Datei ist keine gültige Momenli-Sicherung.')}
 }
 async function resetAll(sample){
-  revokeAll();try{await dbClear()}catch(e){}
+  revokeAll();try{await dbClear()}catch(e){}HQS=null;
   if(custom.el){custom.el.pause();custom.el=null;custom.src=null}
   S.music='spieluhr';S.musicName='';
   if(sample){loadSample();S.tab='home'}else{loadEmpty();S.tab='welcome'}
@@ -1646,7 +1673,7 @@ document.addEventListener('click',function(e){
   else if(a==='mem-del'){
     var dm=memById(id);if(!dm)return;
     if(dm.url)URL.revokeObjectURL(dm.url);
-    S.mem=S.mem.filter(function(x){return x!==dm});dbDel('media:'+dm.id).catch(function(){});markDel('mem:'+dm.id);
+    S.mem=S.mem.filter(function(x){return x!==dm});dbDel('media:'+dm.id).catch(function(){});if(dm.hq)dbDel('photo:'+dm.id).catch(function(){});markDel('mem:'+dm.id);
     save();closeSheet();render();toast('Moment gelöscht');
   }
   else if(a==='ms-done'){var ms=S.ms.filter(function(x){return x.id===id})[0];S.mem.push({id:newId(),upd:Date.now(),date:TODAY,type:'f',title:ms.label,note:'Als Meilenstein markiert.',ms:id,img:null,dur:10,auto:true,media:false});save();render();toast('Meilenstein erreicht')}
@@ -1678,7 +1705,7 @@ document.addEventListener('click',function(e){
   }
   else if(a==='kid-del'&&S.kids.length>1){
     var gone=curKid();if(gone.rit)for(var gy in gone.rit.letters){var gl=gone.rit.letters[gy];if(gl.mediaId)dbDel('media:'+gl.mediaId).catch(function(){})}
-    gone.mem.forEach(function(x){if(x.url)URL.revokeObjectURL(x.url);if(x.media)dbDel('media:'+x.id).catch(function(){})});
+    gone.mem.forEach(function(x){if(x.url)URL.revokeObjectURL(x.url);if(x.hq)dbDel('photo:'+x.id).catch(function(){});if(x.media)dbDel('media:'+x.id).catch(function(){})});
     S.kids=S.kids.filter(function(k){return k!==gone});S.cur=S.kids[0].kid;var k0=S.kids[0];
     S.profile=k0.profile;S.mem=k0.mem;S.ms=k0.ms;S.sample=k0.sample;setBirth();save();setTab('home');toast('Entfernt');
   }
@@ -1691,6 +1718,7 @@ document.addEventListener('click',function(e){
   else if(a==='welcome-sample'){resetAll(true);setTimeout(function(){tourOpen(0)},450)}
   else if(a==='backup')backup();
   else if(a==='sync-share')shareSync();
+  else if(a==='photo-dl'){var pm=memById(id);if(pm)photoDownload(pm)}
   else if(a==='sample')resetAll(true);
   else if(a==='fresh')resetAll(false);
   else if(a==='install'&&installEvt){installEvt.prompt();installEvt.userChoice.finally(function(){installEvt=null;render()})}
@@ -1719,7 +1747,7 @@ document.addEventListener('change',function(e){
   if(t.id==='m-file'){setCustomMusic(f,f.name.replace(/\.[^.]+$/,''));$('fmusic').innerHTML=musicChips();toast('Musik gewählt: '+S.musicName);t.value='';return}
   if(t.id==='lt-file'&&S.lt){var LT=S.lt;LT.blob=f;LT.file=f.name;refreshLt();mediaInfo(f,'s').then(function(o){LT.dur=Math.round(o.dur)||0;if(LT.dur)LT.file=f.name+' · '+mmss(LT.dur*1000);refreshLt()});return}
   if(t.id!=='a-file'||!S.add)return;
-  if(S.add.type==='f'){S.add.busy=true;refreshCap();var A=S.add;shrink(f,function(url){A.busy=false;A.img=url;if(!url)toast('Dieses Bild kann der Browser nicht lesen.');refreshCap()})}
+  if(S.add.type==='f'){S.add.busy=true;refreshCap();var A=S.add;shrink(f,function(url,hq){A.busy=false;A.img=url;A.hq=hq||null;A.newPhoto=true;if(!url)toast('Dieses Bild kann der Browser nicht lesen.');refreshCap()})}
   else setMedia(f,f.name);
 });
 document.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.getAttribute&&e.target.getAttribute('role')==='button'){e.preventDefault();e.target.click()}});
