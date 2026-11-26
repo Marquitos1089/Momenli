@@ -329,6 +329,26 @@ body.editing{overflow:hidden}
 .tab .ti{padding:4px 16px;border-radius:999px;transition:background .2s}
 .tab[aria-current="page"]{color:var(--accent)}
 .tab[aria-current="page"] .ti{background:var(--mint-soft)}
+/* Bewertung neuer Nutzer */
+.err{color:#C0392B;font-weight:600}
+.fl .opt{font-weight:400;color:var(--muted)}
+details.more{margin-top:14px;border-radius:16px;background:var(--bg);padding:2px 14px 12px}
+details.more summary{cursor:pointer;padding:10px 0 2px;font-weight:600;font-size:.9rem;color:var(--accent);list-style:none}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::before{content:"+ ";}
+details.more[open] summary::before{content:"− ";}
+details.more .fld{background:#fff}
+.icard{all:unset;box-sizing:border-box;display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;width:100%;margin-top:18px;background:var(--surface);border-radius:18px;padding:10px 14px 10px 12px;cursor:pointer;box-shadow:0 6px 18px rgba(40,70,60,.08),0 1px 3px rgba(40,70,60,.06)}
+.icard b{display:block;font-size:.95rem}.icard small{color:var(--muted);font-size:.8rem}
+.icard .mk{background:var(--mint-soft);color:var(--accent)}
+.icard-c{font-weight:600;font-size:.85rem;color:var(--accent)}
+.mscard{display:flex;gap:14px;align-items:center;padding:12px 16px}
+.ms.mile .mk{background:var(--mint-soft);color:var(--accent)}
+.ms.mile.done .mk{background:var(--ok);color:#fff}
+.card.danger{box-shadow:none;border:1px dashed #E3B5AE;background:#FFFBFA}
+.app{padding-bottom:calc(180px + env(safe-area-inset-bottom,0px))}
+.stage .bigplay{justify-content:flex-start;padding-top:9%}
+.stage .bigplay b{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -623,8 +643,7 @@ function homeHTML(){
   var out=topHTML()
    +'<h1>'+esc(first())+'</h1><p class="lede">'+ageText(TODAY)+' alt · '+all.length+(all.length===1?' Moment · ':' Momente · ')+doneCount()+(doneCount()===1?' Meilenstein</p>':' Meilensteine</p>')
    +bannerHTML()+ideasCard()
-   +'<p class="label">Monatsfotos</p><div class="strip">'+strip+'</div>'
-   +'<div class="chips" style="margin-top:10px">'+chips+'</div>';
+   +'<div class="chips" style="margin-top:16px">'+chips+'</div>';
   if(!list.length){out+='<p class="empty">Hier ist noch nichts. Tippe auf das Plus, um einen Moment hinzuzufügen.</p>';return out}
   var cur=-1;
   list.forEach(function(m){
@@ -668,7 +687,7 @@ function profileHTML(){
   var geb=parseISO(p.geb),gebTxt=geb?fmtDate(geb):'';
   var out=topHTML()
    +'<div class="avatar" aria-hidden="true">'+esc(first().charAt(0).toUpperCase())+'</div><h1>'+esc(p.name||'Dein Baby')+'</h1><p class="lede">'+(gebTxt?'Geboren am '+gebTxt:'Trage unten den Geburtstag ein.')+'</p>'
-   +'<div class="facts"><span class="pill">'+ageText(TODAY)+'</span><span class="pill n">'+S.mem.length+' Momente</span><span class="pill n">'+doneCount()+' von '+S.ms.length+' Meilensteinen</span></div>'
+   +'<div class="facts"><span class="pill">'+ageText(TODAY)+'</span><span class="pill n">'+S.mem.length+(S.mem.length===1?' Moment':' Momente')+'</span><span class="pill n">'+doneCount()+' von '+S.ms.length+' Meilensteinen</span></div>'
    +'<div class="gh" style="margin:30px 0 12px">Geburtsangaben'+(S.pfEdit?'':'<button class="ghost" style="padding:7px 12px" data-act="pf-edit">Bearbeiten</button>')+'</div><div class="card'+(S.pfEdit?' editing':'')+'">'
    +PF.map(function(f){
      if(!S.pfEdit){var v=f[0]==='geb'?gebTxt:p[f[0]];return '<div class="pf"><label>'+f[1]+'</label><span class="pv'+(v?'':' empty')+'">'+esc(v||'Noch leer')+'</span></div>'}
@@ -696,13 +715,13 @@ function profileHTML(){
    +'<label class="ghost" for="sync-in" style="cursor:pointer">'+ic('down',16)+'Datei vom Partner einspielen</label><input class="vh" type="file" id="sync-in" accept=".json,application/json"></div>'
    +'<p class="small">Mit vielen Videos wird die Datei groß. Dann schickt ihr sie besser per Mail oder Cloud statt per WhatsApp.</p></div><div class="card pad" style="margin-top:10px">'
    +'<p class="small" style="margin-top:0">Lade ab und zu eine Sicherung herunter und lege sie zum Beispiel in deine Cloud. Wenn der Browser-Verlauf gelöscht wird, sind die Daten sonst weg.</p>'
-   +'<div class="btns">'
-   +(S.sample?'':'<button class="ghost" data-act="sample" data-confirm="Wirklich? Ersetzt alles">Beispieldaten laden</button>')
-   +(S.kids.length>1?'<button class="ghost warn" data-act="kid-del" data-confirm="'+esc(first())+' wirklich entfernen?">'+ic('trash',16)+esc(first())+' entfernen</button>':'')
-   +'<button class="ghost warn" data-act="fresh" data-confirm="Wirklich alles löschen?">'+(S.sample?'Mit eigenen Daten starten':(S.kids.length>1?'Alle Kinder löschen und neu starten':'Alles löschen und neu starten'))+'</button></div>'
    +'<div class="btns"><button class="ghost" data-act="tour">'+ic('book',16)+'Anleitung ansehen</button></div>'
    +(installEvt?'<div class="btns"><button class="ghost" data-act="install">'+ic('phone',16)+'Als App installieren</button></div>':'')
-   +'</div>';
+   +'</div>'
+   +'<h2 class="h2">Neu anfangen</h2><div class="card pad danger"><p class="small" style="margin-top:0">Vorsicht: Diese Knöpfe ersetzen oder löschen Daten auf diesem Gerät. Mach vorher eine Sicherung.</p><div class="btns">'
+   +(S.sample?'':'<button class="ghost" data-act="sample" data-confirm="Wirklich? Ersetzt alles">Beispieldaten laden</button>')
+   +(S.kids.length>1?'<button class="ghost warn" data-act="kid-del" data-confirm="'+esc(first())+' wirklich entfernen?">'+ic('trash',16)+esc(first())+' entfernen</button>':'')
+   +'<button class="ghost warn" data-act="fresh" data-confirm="Wirklich alles löschen?">'+(S.sample?'Mit eigenen Daten starten':(S.kids.length>1?'Alle Kinder löschen und neu starten':'Alles löschen und neu starten'))+'</button></div></div>';
   return out;
 }
 function showUsage(){
@@ -809,7 +828,7 @@ function sceneHTML(s){
   if(s.k==='chapter')return '<div class="sc"><p class="eyebrow">'+s.range+'</p><h2>'+s.name+'</h2><p class="sub">'+s.n+' '+(s.n===1?'Moment':'Momente')+'</p></div>';
   if(s.k==='mem'){var m=s.m;
     return '<div class="sc sc-mem"><div class="kb" style="--dur:'+dur+'s">'+cover(m,'')+'</div><div class="cap">'+(m.ms?'<span class="pill">'+ic('star',14)+'Meilenstein</span>':'')+'<h3>'+esc(m.title)+'</h3><p>'+fmtShort(m.date)+' · '+ageText(m.date)+'</p></div></div>'}
-  return '<div class="sc"><p class="eyebrow">Abspann</p><h2>'+S.mem.length+' Momente</h2><p class="lead">'+doneCount()+' Meilensteine in '+ageText(TODAY)+'</p>'+(growthLine()?'<p class="sub">'+growthLine()+'</p>':'')+'<p class="sub">Jeder Moment zählt.</p></div>';
+  return '<div class="sc"><p class="eyebrow">Abspann</p><h2>'+S.mem.length+(S.mem.length===1?' Moment':' Momente')+'</h2><p class="lead">'+doneCount()+(doneCount()===1?' Meilenstein in ':' Meilensteine in ')+ageText(TODAY)+'</p>'+(growthLine()?'<p class="sub">'+growthLine()+'</p>':'')+'<p class="sub">Jeder Moment zählt.</p></div>';
 }
 function musicChips(){
   var o=[['aus','Ohne Musik'],['spieluhr',TUNES.spieluhr.name],['wiegenlied',TUNES.wiegenlied.name],['froehlich',TUNES.froehlich.name]];
@@ -825,7 +844,7 @@ function filmHTML(){
   return topHTML()
    +'<h1>Momentitos Film</h1>'
    +'<div class="chips" style="margin-top:12px"><button class="chip" data-act="film-mode" data-v="leben" aria-pressed="'+!tl+'">Lebensfilm</button><button class="chip" data-act="film-mode" data-v="tl" aria-pressed="'+tl+'">Aufwachsen im Zeitraffer</button></div>'
-   +'<p class="lede">'+(tl?(np<2?'Hier läuft später jedes Monatsfoto kurz hintereinander, so sieht man '+esc(first())+' wachsen. Dafür braucht es mindestens zwei Monatsfotos.':'Alle '+np+' Monatsfotos hintereinander, so sieht man '+esc(first())+' wachsen.'):'Aus '+S.mem.length+' Momenten automatisch zusammengestellt.')+'</p>'
+   +'<p class="lede">'+(tl?(np<2?'Hier läuft später jedes Monatsfoto kurz hintereinander, so sieht man '+esc(first())+' wachsen. Dafür braucht es mindestens zwei Monatsfotos.':'Alle '+np+' Monatsfotos hintereinander, so sieht man '+esc(first())+' wachsen.'):'Aus '+(S.mem.length===1?'einem Moment':S.mem.length+' Momenten')+' automatisch zusammengestellt.')+'</p>'
    +'<div class="stage" id="stage" data-state="idle"><div class="fp" id="fp"></div><div id="scene"></div>'
    +'<button class="bigplay" id="bigplay" data-act="film-toggle"><span>'+ic('play',30)+'</span><b id="bigtxt">Film starten</b></button></div>'
    +'<div class="ctrl"><button class="pbtn" id="fbtn" data-act="film-toggle" aria-label="Abspielen">'+ic('play',24)+'</button>'
@@ -959,7 +978,7 @@ function drawFrame(ctx,W,H,t,imgs){
       s.items.forEach(function(m,mi){if(mi>=shownM)return;var cx=pad+(mi%4)*(cs+gap),cy=H*.36+Math.floor(mi/4)*(cs+gap);
         ctx.save();rrect(ctx,cx,cy,cs,cs,12*u);ctx.clip();ctx.translate(cx,cy);ctx.scale(cs/W,cs/H);drawCoverCanvas(ctx,W,H,m,imgs[m.id]);ctx.restore()});
       it=null}
-    else it=[mk(eb,'Abspann'),mk(h2,S.mem.length+' Momente'),mk(ld,doneCount()+' Meilensteine in '+ageText(TODAY))].concat(growthLine()?[mk(sb,growthLine())]:[]).concat([mk(sb,'Jeder Moment zählt.')]);
+    else it=[mk(eb,'Abspann'),mk(h2,S.mem.length+(S.mem.length===1?' Moment':' Momente')),mk(ld,doneCount()+(doneCount()===1?' Meilenstein in ':' Meilensteine in ')+ageText(TODAY))].concat(growthLine()?[mk(sb,growthLine())]:[]).concat([mk(sb,'Jeder Moment zählt.')]);
     if(it)textBlock(ctx,W,H,it,alpha);
   }
   ctx.fillStyle='#6FD3AE';ctx.fillRect(0,0,W*t/F.total,4*u);
@@ -1084,21 +1103,23 @@ function dueItems(){
   var out=[],r=R(),mo=ageMonths(TODAY),y=ageYears(TODAY);
   if(mo<=mMax()){
     var m=mo,tag='monat-'+m;
-    if(!ritMem(tag))out.push({t:ritLabel(tag),s:'Fällig seit '+fmtShort(addMonths(BIRTH,m)),act:'rit-photo',v:tag});
+    if(!ritMem(tag))out.push({t:ritLabel(tag),s:'Jetzt dran',act:'rit-photo',v:tag,since:addMonths(BIRTH,m)});
     else if(mo<mMax()){var nd=addMonths(BIRTH,m+1),dd=Math.round((nd-TODAY)/DAY);out.push({t:'Nächstes Monatsfoto',s:'In '+days(dd)+', am '+fmtShort(nd),act:'',v:'',soon:true})}
   }
   var nb=bday(y+1),dn=Math.round((nb-TODAY)/DAY);
-  if(dn<=60)out.push({t:(y+1)+'. Geburtstag in '+days(dn),s:'Brief schreiben, Mini-Interview, Geburtstagsfoto',act:'rit-year',v:String(y+1)});
+  if(dn<=60)out.push({t:(y+1)+'. Geburtstag in '+days(dn),s:'Brief schreiben, Mini-Interview, Geburtstagsfoto',act:'rit-year',v:String(y+1),since:new Date(nb-21*DAY)});
   if(y>=1){
     var miss=[];if(!r.letters[y])miss.push('Brief');if(!r.interviews[y])miss.push('Interview');if(!ritMem('geb-'+y))miss.push('Foto');
-    if(miss.length&&dn>60)out.push({t:'Zum '+y+'. Geburtstag fehlt noch',s:miss.join(', ')+'. Lässt sich nachtragen.',act:'rit-year',v:String(y)});
+    if(miss.length&&dn>60)out.push({t:'Zum '+y+'. Geburtstag fehlt noch',s:miss.join(', ')+'. Lässt sich nachtragen.',act:'rit-year',v:String(y),since:bday(y)});
   }
   var last=r.measures.slice().sort(function(a,b){return a.date<b.date?1:-1})[0],ld=last?parseISO(last.date):null,gap=ld?Math.round((TODAY-ld)/DAY):999;
   var every=mo<12?60:(mo<36?120:365);
-  if(gap>=every)out.push({t:'Größe und Gewicht messen',s:ld?'Letzte Messung vor '+days(gap):'Noch keine Messung eingetragen',act:'msr-open',v:''});
+  if(gap>=every)out.push({t:'Größe und Gewicht messen',s:ld?'Letzte Messung vor '+days(gap):'Noch keine Messung eingetragen',act:'msr-open',v:'',since:new Date((ld?+ld:+BIRTH)+every*DAY)});
   return out;
 }
-function dueCount(){try{return dueItems().filter(function(d){return !d.soon}).length}catch(e){return 0}}
+/* Die Zahl am Reiter erscheint erst, wenn etwas seit einer Woche ansteht */
+function appStart(){var st=0;try{st=+localStorage.getItem('mt_start')||0}catch(e){}if(!st){st=Date.now();allMem().forEach(function(m){if(m.upd&&m.upd<st)st=m.upd});try{localStorage.setItem('mt_start',String(st))}catch(e){}}return st}
+function dueCount(){try{if(Date.now()-appStart()<7*DAY)return 0;return dueItems().filter(function(d){return !d.soon&&d.since&&TODAY-d.since>=7*DAY}).length}catch(e){return 0}}
 
 function slotHTML(tag,label){
   var m=ritMem(tag);
@@ -1330,51 +1351,68 @@ var IDEAS=[
 'f|Erster Ferienjob','f|Führerschein-Training','f|Abschlussfeier oder Schulabschluss','s|Pläne nach der Schule','f|Abiball oder Abschlussball','f|Erste eigene Reise mit Freunden','f|Wahlbenachrichtigung zur ersten Wahl','s|Was du aus deiner Kindheit mitnimmst','f|Dein Zimmer vor dem Auszug','f|Lieblingsfoto aus jedem Jahr, nebeneinander','s|Brief der Eltern zum 18. Geburtstag','f|Der 18. Geburtstag','v|Rede oder Toast zum 18.','f|Familienfoto am selben Ort wie vor 18 Jahren','s|Interview: 18 Fragen zum 18.','f|Erstes eigenes Konto oder erster Ausweis','f|Mit den Großeltern, wie früher','f|Die Schlüssel zur ersten eigenen Wohnung','s|Was du deinem jüngeren Ich sagen würdest','f|Der Film deines Lebens, gemeinsam angesehen']]
 ];
 function ideaPhaseIndex(mo){for(var i=0;i<IDEAS.length;i++)if(mo>=IDEAS[i][2]&&mo<=IDEAS[i][3])return i;return mo<0?0:IDEAS.length-1}
-function ideaById(id){var p=id.split('-'),ph=IDEAS.filter(function(x){return x[0]===p[0]})[0];if(!ph)return null;var r=ph[4][+p[1]];return r?{id:id,type:r[0],t:r.slice(2),ph:ph}:null}
 var IDEA_MS={'m0-8':'zuhause','m0-13':'bad','m1-0':'laecheln','m4-0':'lachen','m4-1':'drehen','m4-3':'brei','m7-0':'sitzen','m7-1':'krabbeln','m7-4':'zahn','m10-2':'wort','m10-7':'geburtstag1','m10-1':'schritte','m19-10':'geburtstag2','m19-19':'kita','y6-1':'schule'};
-function ideaMs(id){var k=IDEA_MS[id];return k&&S.ms.some(function(m){return m.id===k})?k:''}
-function ideaDone(id){var k=ideaMs(id);if(k){var mm=memOf(k);if(mm)return mm}for(var i=0;i<S.mem.length;i++)if(S.mem[i].idea===id)return S.mem[i];return null}
-function ideaHidden(id){return !!(R().hid||{})[id]}
-function ideaList(pi){var ph=IDEAS[pi];return ph[4].map(function(r,i){return {id:ph[0]+'-'+i,type:r[0],t:r.slice(2)}})}
+/* Meilensteine ohne passende Idee: in welchem Altersabschnitt sie stehen */
+var MS_PH={geburt:'m0',zuhause:'m0',bad:'m0',laecheln:'m1',lachen:'m4',drehen:'m4',brei:'m4',sitzen:'m7',krabbeln:'m7',zahn:'m7',wort:'m10',geburtstag1:'m10',stehen:'m10',schritte:'m10',satz:'y2',geburtstag2:'m19',kita:'m19',trocken:'y2',schule:'y6'};
+function phIdx(key){for(var i=0;i<IDEAS.length;i++)if(IDEAS[i][0]===key)return i;return 0}
+function msById(k){return S.ms.filter(function(m){return m.id===k})[0]}
+function msPhase(m){if(MS_PH[m.id])return phIdx(MS_PH[m.id]);if(m.ph!=null)return m.ph;var mm=memOf(m.id);return ideaPhaseIndex(ageMonths(mm?mm.date:TODAY))}
+function ideaMs(id){if(id.indexOf('ms:')===0)return msById(id.slice(3))?id.slice(3):'';var k=IDEA_MS[id];return k&&msById(k)?k:''}
+function ideaById(id){
+  if(id.indexOf('ms:')===0){var m=msById(id.slice(3));return m?{id:id,type:'f',t:m.label,ms:m.id,custom:m.custom}:null}
+  var p=id.split('-'),ph=IDEAS.filter(function(x){return x[0]===p[0]})[0];if(!ph)return null;var r=ph[4][+p[1]];if(!r)return null;
+  var o={id:id,type:r[0],t:r.slice(2),ph:ph},k=ideaMs(id);if(k){o.ms=k;o.t=msById(k).label}return o}
+function ideaDone(id){var k=ideaMs(id);if(k)return memOf(k)||null;for(var i=0;i<S.mem.length;i++)if(S.mem[i].idea===id)return S.mem[i];return null}
+function ideaHidden(id){return !ideaMs(id)&&!!(R().hid||{})[id]}
+function ideaList(pi){
+  var ph=IDEAS[pi],rows=ph[4].map(function(r,i){var x={id:ph[0]+'-'+i,type:r[0],t:r.slice(2)},k=ideaMs(x.id);if(k){x.ms=k;x.t=msById(k).label}return x});
+  var mapped={};rows.forEach(function(x){if(x.ms)mapped[x.ms]=1});
+  var ms=rows.filter(function(x){return x.ms});
+  S.ms.forEach(function(m){if(!mapped[m.id]&&msPhase(m)===pi)ms.push({id:'ms:'+m.id,type:'f',t:m.label,ms:m.id,custom:m.custom})});
+  var ord={};S.ms.forEach(function(m,i){ord[m.id]=i});ms.sort(function(a,b){return ord[a.ms]-ord[b.ms]});
+  return ms.concat(rows.filter(function(x){return !x.ms}));
+}
 function ideasNow(n){
   var pi=ideaPhaseIndex(ageMonths(TODAY)),l=ideaList(pi).filter(function(x){return !ideaHidden(x.id)&&!ideaDone(x.id)});
   if(l.length<n&&pi+1<IDEAS.length)l=l.concat(ideaList(pi+1).filter(function(x){return !ideaHidden(x.id)&&!ideaDone(x.id)}));
   var off=Math.floor(TODAY/DAY)%Math.max(1,l.length);return l.slice(off).concat(l.slice(0,off)).slice(0,n);
 }
 function ideaRow(x,withHide){
-  var d=ideaDone(x.id),h=ideaHidden(x.id);
-  return '<div class="ms idea'+(d?' done':'')+(h?' hid':'')+'"><span class="mk">'+ic(d?'check':typeIcon(x.type),18)+'</span>'
-   +'<div class="ms-open" role="button" tabindex="0" data-act="'+(d?'open':'idea')+'" data-id="'+(d?d.id:x.id)+'"><h3>'+esc(x.t)+(ideaMs(x.id)?'<span class="ims" title="Zählt als Meilenstein">'+ic('star',13)+'</span>':'')+'</h3><p class="meta">'+(d?'Festgehalten am '+fmtShort(d.date):(h?'Ausgeblendet':typeName(x.type)))+'</p></div>'
-   +(withHide&&!d?'<button class="icon-btn" data-act="idea-hide" data-id="'+x.id+'" aria-label="'+(h?'Wieder anzeigen':'Ausblenden')+'" title="'+(h?'Wieder anzeigen':'Ausblenden')+'">'+ic(h?'redo':'x',16)+'</button>':'<span></span>')+'</div>';
+  var d=ideaDone(x.id),h=ideaHidden(x.id),M=!!x.ms;
+  var right='<span></span>';
+  if(M&&!d)right='<div style="display:flex;gap:6px">'+(x.custom?'<button class="icon-btn" data-act="ms-del" data-id="'+x.ms+'" aria-label="Eigenen Meilenstein löschen" data-confirm="Löschen?">'+ic('trash',16)+'</button>':'')+'<button class="icon-btn" data-act="ms-done" data-id="'+x.ms+'" aria-label="Ohne Foto als erreicht markieren" title="Ohne Foto als erreicht markieren">'+ic('check',16)+'</button></div>';
+  else if(withHide&&!d)right='<button class="icon-btn" data-act="idea-hide" data-id="'+x.id+'" aria-label="'+(h?'Wieder anzeigen':'Ausblenden')+'" title="'+(h?'Wieder anzeigen':'Ausblenden')+'">'+ic(h?'redo':'x',16)+'</button>';
+  return '<div class="ms idea'+(M?' mile':'')+(d?' done':'')+(h?' hid':'')+'"><span class="mk">'+ic(d?'check':(M?'star':typeIcon(x.type)),18)+'</span>'
+   +'<div class="ms-open" role="button" tabindex="0" data-act="'+(d?'open':'idea')+'" data-id="'+(d?d.id:x.id)+'"><h3>'+esc(x.t)+'</h3><p class="meta">'+(d?(M?'Meilenstein erreicht am ':'Festgehalten am ')+fmtShort(d.date):(h?'Ausgeblendet':(M?'Meilenstein'+(x.custom?' · eigener':''):typeName(x.type))))+'</p></div>'
+   +right+'</div>';
 }
 function ideasCard(){
   var l=ideasNow(3);if(!l.length)return '';
-  return '<div class="gh" style="margin:24px 0 10px">Ideen für jetzt<button class="ghost" style="padding:7px 12px" data-act="tab" data-tab="ideas">Alle Ideen</button></div>'+l.map(function(x){return ideaRow(x,true)}).join('');
+  var open=S.ideasOpen!=null?S.ideasOpen:!S.mem.length;
+  if(!open)return '<button class="icard" data-act="ideas-toggle"><span class="mk">'+ic('star',18)+'</span><span><b>Ideen für jetzt</b><small>'+l.length+' Vorschläge passend zum Alter</small></span><span class="icard-c">Zeigen</span></button>';
+  return '<div class="gh" style="margin:20px 0 10px">Ideen für jetzt<span style="display:flex;gap:6px">'+(S.mem.length?'<button class="ghost" style="padding:7px 12px" data-act="ideas-toggle">Einklappen</button>':'')+'<button class="ghost" style="padding:7px 12px" data-act="tab" data-tab="ideas">Alle Ideen</button></span></div>'+l.map(function(x){return ideaRow(x,true)}).join('');
 }
 function ideasHTML(){
   var cur=ideaPhaseIndex(ageMonths(TODAY));if(S.ideaPh==null)S.ideaPh=cur;
   var pi=S.ideaPh,ph=IDEAS[pi],l=ideaList(pi),done=l.filter(function(x){return ideaDone(x.id)}).length,nh=l.filter(function(x){return ideaHidden(x.id)}).length;
   var chips=IDEAS.map(function(p,i){return '<button class="chip'+(i<cur?' past':'')+(i===cur?' now':'')+'" data-act="idea-ph" data-v="'+i+'" aria-pressed="'+(i===pi)+'">'+esc(p[1])+'</button>'}).join('');
   var vis=l.filter(function(x){return S.showHid||!ideaHidden(x.id)});
-  var total=IDEAS.reduce(function(a,p){return a+p[4].length},0);
-  return topHTML()+'<h1>Ideen</h1><p class="lede">Die großen Meilensteine und '+total+' Ideen von der Schwangerschaft bis zum 18. Geburtstag. Tippe etwas an, um daraus einen Moment zu machen.</p>'
-   +'<h2 class="h2" id="ms-sec">Meilensteine</h2>'+msBody(!S.msOpen)
-   +'<h2 class="h2">Alle Ideen</h2><p class="tag" style="margin:-6px 0 0">Was nicht passt, blendest du mit dem Kreuz aus. Ideen mit Stern zählen auch als Meilenstein.</p>'
-   +'<div class="chips" id="idea-chips" style="margin-top:12px">'+chips+'</div>'
+  var total=IDEAS.reduce(function(a,p){return a+p[4].length},0),tot=S.ms.length,dn=doneCount(),C=2*Math.PI*42,off=C*(1-(tot?dn/tot:0));
+  var out=topHTML()+'<h1>Ideen</h1><p class="lede">'+total+' Ideen von der Schwangerschaft bis zum 18. Geburtstag. Einträge mit Stern sind Meilensteine. Tippe etwas an, um daraus einen Moment zu machen.</p>'
+   +'<div class="card pad mscard"><svg width="52" height="52" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--line)" stroke-width="11"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--accent)" stroke-width="11" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 50 50)"/></svg><div><p style="margin:0"><strong>'+dn+' von '+tot+' Meilensteinen</strong> erreicht</p><p class="tag" style="margin:0">Mit Haken ohne Foto abhaken, mit Antippen ein Foto dazu speichern.</p></div></div>'
+   +'<div class="chips" id="idea-chips" style="margin-top:14px">'+chips+'</div>'
    +'<div class="gh" style="margin:18px 0 10px">'+esc(ph[1])+'<span>'+done+' von '+l.length+' festgehalten</span></div>'
    +vis.map(function(x){return ideaRow(x,true)}).join('')
    +(nh?'<button class="dash" data-act="idea-showhid">'+(S.showHid?'Ausgeblendete verstecken':nh+' ausgeblendete Ideen zeigen')+'</button>':'');
+  if(S.msForm)out+='<div class="card pad" style="margin-top:6px"><label class="fl" for="ms-name" style="margin-top:0">Eigener Meilenstein in „'+esc(ph[1])+'“</label><input class="fld" id="ms-name" placeholder="z. B. Erste Fahrt mit dem Laufrad"><label class="fl" for="ms-when">Wann ungefähr? (optional)</label><input class="fld" id="ms-when" placeholder="z. B. ca. 2 Jahre"><p class="err" id="ms-err" hidden>Bitte gib einen Namen ein.</p><div class="btns"><button class="ghost main" data-act="ms-add">Anlegen</button><button class="ghost" data-act="ms-cancel">Abbrechen</button></div></div>';
+  else out+='<button class="dash" data-act="ms-new">'+ic('plus',18)+'Eigenen Meilenstein anlegen</button>';
+  return out;
 }
-
 /* ---------- Kurze Anleitung ---------- */
 var TOUR={i:0,steps:[
- {sel:'.fab',icon:'plus',t:'Neuen Moment festhalten',d:'Mit dem roten Plus speicherst du ein Foto, ein Video oder eine Sprachnachricht. Du kannst direkt die Kamera öffnen oder eine Datei vom Handy wählen und das Datum auch nachträglich ändern.'},
- {tab:'home',icon:'heart',t:'Momente',d:'Hier stehen alle Momente nach Lebensmonaten sortiert. Oben filterst du nach Fotos, Videos, Sprache oder Meilensteinen. Tippe einen Moment an, um ihn groß zu sehen, zu bearbeiten oder zu löschen. Unter „Ideen für jetzt“ findest du Vorschläge passend zum Alter, über 300 von der Schwangerschaft bis 18.'},
- {tab:'ideas',icon:'award',t:'Ideen und Meilensteine',d:'Oben die großen Meilensteine mit Fortschritt, darunter über 300 Ideen nach Alter. Tippe etwas an, um direkt einen Moment daraus zu machen.'},
- {tab:'rit',icon:'repeat',t:'Rituale',d:'Jeden Monat ein Foto am selben Ort, zu jedem Geburtstag ein Brief und ein kleines Interview. Die rote Zahl zeigt, was gerade ansteht. Die Termine kannst du auch in deinen Kalender holen.'},
- {tab:'profile',icon:'book',t:'Steckbrief',d:'Geburtsangaben, die Lebensgeschichte deines Kindes und Größe und Gewicht mit Verlauf. Mit „Bearbeiten“ änderst du die Angaben. Ganz unten kannst du eine Sicherung herunterladen, das solltest du ab und zu tun.'},
- {tab:'film',icon:'film',t:'Film',d:'Aus allen Momenten entsteht automatisch ein Film, mit Musik und als Video speicherbar. Im Zeitraffer siehst du dein Kind von Monatsfoto zu Monatsfoto wachsen.'},
- {sel:'.kidbtn',icon:'plus',t:'Mehrere Kinder',d:'Oben rechts wechselst du zwischen deinen Kindern oder legst ein weiteres Kind an. Jedes Kind hat eigene Momente, Rituale und einen eigenen Film.'}
+ {sel:'.fab',icon:'plus',t:'Neuen Moment festhalten',d:'Mit dem grünen Plus speicherst du Fotos, Videos oder Sprachnachrichten. Das Datum wird aus dem Foto übernommen, ein Titel ist nicht nötig.'},
+ {tab:'ideas',icon:'award',t:'Ideen und Meilensteine',d:'Über 300 Ideen passend zum Alter. Einträge mit Stern sind Meilensteine wie das erste Lächeln. Antippen, Foto dazu, fertig.'},
+ {tab:'rit',icon:'repeat',t:'Rituale, Steckbrief und Film',d:'Unter Rituale findest du Monatsfotos, Briefe und Interviews zum Geburtstag. Im Steckbrief stehen die Geschichte deines Kindes, Größe und Gewicht und die Sicherung. Aus allem entsteht automatisch ein Film.'}
 ]};
 function tourMark(){
   var old=document.querySelectorAll('.tour-hl');for(var i=0;i<old.length;i++)old[i].classList.remove('tour-hl');
@@ -1404,7 +1442,7 @@ function tabsHTML(){
   var T=[['home','heart','Momente'],['ideas','award','Ideen'],['rit','repeat','Rituale'],['profile','book','Steckbrief'],['film','film','Film']],dc=dueCount();
   return T.map(function(t){
     return '<button class="tab" data-act="tab" data-tab="'+t[0]+'"'+(S.tab===t[0]?' aria-current="page"':'')+'><span class="ti">'+ic(t[1],22)+(t[0]==='rit'&&dc?'<i class="badge" aria-label="'+dc+' offen">'+dc+'</i>':'')+'</span><span>'+t[2]+'</span></button>';
-  }).join('')+'<button class="fab" data-act="add" aria-label="Neuen Moment hinzufügen">'+ic('plus',26)+'</button>';
+  }).join('')+(S.tab==='film'?'':'<button class="fab" data-act="add" aria-label="Neuen Moment hinzufügen">'+ic('plus',26)+'</button>');
 }
 function render(){
   filmStop();
@@ -1585,6 +1623,31 @@ async function edDone(){
   edClose();refreshCap();
 }
 
+/* Aufnahmedatum: EXIF (DateTimeOriginal) aus JPEG, sonst Dateidatum */
+function exifDate(file){return new Promise(function(res){
+  if(!file||!/jpe?g/i.test((file.type||'')+(file.name||''))){res(null);return}
+  var fr=new FileReader();fr.onload=function(){try{res(parseExif(new DataView(fr.result)))}catch(e){res(null)}};fr.onerror=function(){res(null)};fr.readAsArrayBuffer(file.slice(0,262144))})}
+function parseExif(v){
+  if(v.getUint16(0)!==0xFFD8)return null;var o=2;
+  while(o+4<v.byteLength){var mk=v.getUint16(o),len=v.getUint16(o+2);if((mk&0xFF00)!==0xFF00)return null;
+    if(mk===0xFFE1&&v.getUint32(o+4)===0x45786966){
+      var t=o+10,le=v.getUint16(t)===0x4949,g16=function(p){return v.getUint16(p,le)},g32=function(p){return v.getUint32(p,le)},dt={};
+      var scan=function(ifd){var n=g16(ifd),sub=0;for(var i=0;i<n;i++){var e=ifd+2+i*12,tag=g16(e);
+        if(tag===0x8769)sub=t+g32(e+8);
+        if(tag===0x9003||tag===0x9004||tag===0x0132){var off=t+g32(e+8),str='';for(var c=0;c<19;c++)str+=String.fromCharCode(v.getUint8(off+c));dt[tag]=str}}return sub};
+      var sub=scan(t+g32(t+4));if(sub)scan(sub);
+      var str=dt[0x9003]||dt[0x9004]||dt[0x0132],m=str&&/^(\d{4}):(\d{2}):(\d{2})/.exec(str);
+      return m&&+m[1]>1990?new Date(+m[1],+m[2]-1,+m[3]):null}
+    o+=2+len}
+  return null}
+async function applyFileDate(A,file){
+  if(!A||A.edit||A.dateTouched||A.dateFromFile)return;A.dateFromFile=true;
+  var d=await exifDate(file),src='Foto';
+  if(!d&&file.lastModified){d=new Date(file.lastModified);d=new Date(d.getFullYear(),d.getMonth(),d.getDate());src='Datei'}
+  if(!d||d>TODAY||S.add!==A||A.dateTouched)return;
+  var el=$('a-date');if(!el||el.value===iso(d))return;
+  el.value=iso(d);toast('Datum aus dem '+src+' übernommen: '+fmtShort(d));
+}
 /* ---------- Neuer Moment ---------- */
 function newAdd(t,rit,ms){return {type:t||'f',photos:[],img:null,blob:null,file:'',dur:0,busy:false,rit:rit||'',ms:ms||''}}
 function editAdd(m){var A=newAdd(m.type,m.rit,m.ms);A.edit=m.id;A.img=m.img;A.photos=picsOf(m).map(function(p){return {pid:p.pid,img:p.img,hq:!!p.hq,orig:!!p.orig,ed:p.ed||null,blob:null}});A.dur=m.dur||0;A.file=m.media?(typeName(m.type)+' gespeichert'+(m.dur?' · '+mmss(m.dur*1000):'')+'. Tippen zum Ersetzen.'):'';return A}
@@ -1652,12 +1715,13 @@ function addHTML(){
   var seg=[['f','Foto'],['v','Video'],['s','Sprache']].map(function(x){return '<button class="segb" data-act="add-type" data-type="'+x[0]+'" aria-pressed="'+(S.add.type===x[0])+'">'+ic(typeIcon(x[0]),22)+x[1]+'</button>'}).join('');
   return '<div class="grab"></div><div class="sh-head"><h2>'+(E?'Moment bearbeiten':'Neuer Moment')+'</h2><button class="icon-btn" data-act="close" aria-label="Schließen">'+ic('x',18)+'</button></div>'
    +(E?'':'<div class="seg" role="group" aria-label="Art des Moments">'+seg+'</div>')+'<div id="cap">'+capHTML()+'</div>'
-   +'<label class="fl" for="a-title">Titel</label><input class="fld" id="a-title"'+(E?'':' data-focus')+' placeholder="z. B. Erstes Mal auf der Schaukel" value="'+esc(E?E.title:at)+'" data-auto="'+esc(E?'':at)+'">'
+   +'<label class="fl" for="a-title">Titel <span class="opt">(optional)</span></label><input class="fld" id="a-title" placeholder="'+esc(at||'Wird sonst automatisch vergeben')+'" value="'+esc(E?E.title:at)+'" data-auto="'+esc(E?'':at)+'">'
    +'<label class="fl" for="a-date">Datum</label><input class="fld" type="date" id="a-date" value="'+(E?iso(E.date):ritDefaultDate(A.rit))+'" max="'+iso(TODAY)+'">'
    +'<label class="fl" for="a-note">Notiz</label><textarea class="fld" id="a-note" placeholder="Was macht diesen Moment besonders?">'+esc(E?E.note:'')+'</textarea>'
-   +'<label class="fl" for="a-ms">Meilenstein (optional)</label><select class="fld" id="a-ms"><option value="">Kein Meilenstein</option>'+pend+'</select>'
-   +'<label class="fl" for="a-rit">Wiederkehrendes Foto (optional)</label><select class="fld" id="a-rit">'+ritOptions(S.add.rit)+'</select>'
    +'<label class="tog" style="margin-top:16px"><input type="checkbox" id="a-story"'+((E?E.story:A.story)?' checked':'')+'><span>In „Meine Geschichte“ aufnehmen<br><small class="tag">Erscheint im Steckbrief in der Lebensgeschichte. Meilensteine stehen dort sowieso.</small></span></label>'
+   +'<details class="more"'+((A.ms||A.rit||(E&&(E.ms||E.rit)))?' open':'')+'><summary>Mehr: Meilenstein, wiederkehrendes Foto</summary>'
+   +'<label class="fl" for="a-ms">Meilenstein</label><select class="fld" id="a-ms"><option value="">Kein Meilenstein</option>'+pend+'</select>'
+   +'<label class="fl" for="a-rit">Wiederkehrendes Foto</label><select class="fld" id="a-rit">'+ritOptions(S.add.rit)+'</select></details>'
    +'<p class="err" id="a-err" hidden>Bitte gib einen Titel ein.</p><button class="primary" data-act="save">'+(E?'Änderungen speichern':'Moment speichern')+'</button>';
 }
 /* Vorschau (max. 1280 px, im Speicherstand) und Druckfassung (max. 2400 px, eigene Datei) */
@@ -1725,11 +1789,11 @@ async function storePics(m,A){
 }
 async function saveMoment(){
   var title=$('a-title').value.trim();
-  if(!title){$('a-err').hidden=false;$('a-title').focus();return}
   if(REC){toast('Bitte beende zuerst die Aufnahme.');return}
   if(S.add.busy){toast('Fotos werden noch vorbereitet …');return}
   var A=S.add,d=parseISO($('a-date').value)||TODAY;
   if(d>TODAY)d=TODAY;
+  if(!title)title=autoTitle()||(typeName(A.type)+' vom '+fmtShort(d));
   if(A.edit){
     var em=memById(A.edit);if(!em){closeSheet();return}
     if(em.type==='f')await storePics(em,A);
@@ -1902,7 +1966,7 @@ document.addEventListener('click',function(e){
   else if(a==='msr-del'){var mid=b.getAttribute('data-v');R().measures=R().measures.filter(function(x){return x.id!==mid});markDel('msr:'+mid);save();render()}
   else if(a==='ics'){download(new Blob([icsFile()],{type:'text/calendar'}),'Momentitos_Erinnerungen_'+first()+'.ics');toast('Kalenderdatei geladen. Öffne sie, um die Termine zu übernehmen.')}
   else if(a==='save')saveMoment();
-  else if(a==='idea'){var it=ideaById(id);if(!it)return;closeSheet();var ik=ideaMs(id);S.add=newAdd(it.type,'',ik&&!memOf(ik)?ik:'');S.add.idea=id;S.add.ideaT=it.t;openSheet(addHTML())}
+  else if(a==='idea'){var it=ideaById(id);if(!it)return;closeSheet();var ik=ideaMs(id);S.add=newAdd(it.type,'',ik&&!memOf(ik)?ik:'');S.add.idea=id.indexOf('ms:')===0?'':id;S.add.ideaT=it.t;openSheet(addHTML())}
   else if(a==='idea-hide'){var hr=R();hr.hid=hr.hid||{};if(hr.hid[id])delete hr.hid[id];else{hr.hid[id]=1;toast('Ausgeblendet')}save();render()}
   else if(a==='idea-ph'){S.ideaPh=+b.getAttribute('data-v');S.showHid=false;render()}
   else if(a==='idea-showhid'){S.showHid=!S.showHid;render()}
@@ -1925,7 +1989,9 @@ document.addEventListener('click',function(e){
     S.mem=S.mem.filter(function(x){return x!==dm});dbDel('media:'+dm.id).catch(function(){});delPics(dm);markDel('mem:'+dm.id);
     save();closeSheet();render();toast('Moment gelöscht');
   }
-  else if(a==='ms-done'){var ms=S.ms.filter(function(x){return x.id===id})[0];S.mem.push({id:newId(),upd:Date.now(),date:TODAY,type:'f',title:ms.label,note:'Als Meilenstein markiert.',ms:id,img:null,dur:10,auto:true,media:false});save();render();toast('Meilenstein erreicht')}
+  else if(a==='ms-done'){var ms=msById(id);if(ms)openSheet('<div class="grab"></div><div class="sh-head"><h2>'+esc(ms.label)+'</h2><button class="icon-btn" data-act="close" aria-label="Schließen">'+ic('x',18)+'</button></div><p class="tag" style="margin:0 0 6px">Wann war das?</p><input class="fld" type="date" id="md-date" value="'+iso(TODAY)+'" max="'+iso(TODAY)+'"><button class="primary" data-act="ms-done-save" data-id="'+ms.id+'">Als erreicht speichern</button><button class="ghost" style="width:100%;margin-top:10px;justify-content:center" data-act="ms-moment" data-id="'+ms.id+'">'+ic('camera',16)+'Lieber mit Foto festhalten</button>')}
+  else if(a==='ms-done-save'){var ms2=msById(id),dd=parseISO($('md-date').value)||TODAY;if(dd>TODAY)dd=TODAY;if(ms2){S.mem.push({id:newId(),upd:Date.now(),date:dd,type:'f',title:ms2.label,note:'',ms:id,img:null,dur:10,auto:true,media:false});save();closeSheet();render();toast('Meilenstein erreicht')}}
+  else if(a==='ideas-toggle'){S.ideasOpen=!(S.ideasOpen!=null?S.ideasOpen:!S.mem.length);render()}
   else if(a==='ms-undo'){S.mem=S.mem.filter(function(x){return !(x.id===+id&&x.auto)});save();closeSheet();render()}
   else if(a==='ms-del'){S.ms=S.ms.filter(function(x){return x.id!==id});markDel('ms:'+id);save();render()}
   else if(a==='ms-new'){S.msForm=true;render();var n=$('ms-name');if(n)n.focus()}
@@ -1933,7 +1999,7 @@ document.addEventListener('click',function(e){
   else if(a==='ms-add'){
     var nm=$('ms-name').value.trim();
     if(!nm){$('ms-err').hidden=false;return}
-    S.ms.push({id:'c'+newId(),label:nm,when:$('ms-when').value.trim()||'Eigener Meilenstein',custom:true});
+    S.ms.push({id:'c'+newId(),label:nm,when:$('ms-when').value.trim()||'Eigener Meilenstein',custom:true,ph:S.tab==='ideas'&&S.ideaPh!=null?S.ideaPh:ideaPhaseIndex(ageMonths(TODAY))});
     S.msForm=false;save();render();toast('Meilenstein angelegt');
   }
   else if(a==='film-toggle')filmToggle();
@@ -1986,6 +2052,7 @@ document.addEventListener('input',function(e){
 });
 document.addEventListener('change',function(e){
   var t=e.target;
+  if(t.id==='a-date'&&S.add)S.add.dateTouched=true;
   if(t.id==='m-on'){R().monthly=t.checked;save();render();toast(t.checked?'Monatsfotos laufen bis zum 18. Geburtstag weiter':'Monatsfotos nur im ersten Jahr');return}
   if(t.id==='a-rit'||t.id==='a-ms'){
     if(S.add){if(t.id==='a-rit')S.add.rit=t.value;else S.add.ms=t.value}
@@ -2002,10 +2069,10 @@ document.addEventListener('change',function(e){
   if(t.id==='m-file'){setCustomMusic(f,f.name.replace(/\.[^.]+$/,''));$('fmusic').innerHTML=musicChips();toast('Musik gewählt: '+S.musicName);t.value='';return}
   if(t.id==='lt-file'&&S.lt){var LT=S.lt;LT.blob=f;LT.file=f.name;refreshLt();mediaInfo(f,'s').then(function(o){LT.dur=Math.round(o.dur)||0;if(LT.dur)LT.file=f.name+' · '+mmss(LT.dur*1000);refreshLt()});return}
   if(t.id!=='a-file'||!S.add)return;
-  if(S.add.type==='f'){var A=S.add,fl=[].slice.call(t.files),bad=0;t.value='';A.busy=(A.busy||0)+1;refreshCap();
+  if(S.add.type==='f'){var A=S.add,fl=[].slice.call(t.files),bad=0;t.value='';if(!A.photos.length)applyFileDate(A,fl[0]);A.busy=(A.busy||0)+1;refreshCap();
     (function next(i){if(i>=fl.length){A.busy--;if(bad)toast(bad===1?'Ein Bild kann der Browser nicht lesen.':bad+' Bilder kann der Browser nicht lesen.');refreshCap();return}
       shrink(fl[i],function(url,hq){if(url)A.photos.push({pid:newId(),img:url,hq:false,blob:hq||null,srcFile:fl[i]});else bad++;refreshCap();next(i+1)})})(0)}
-  else setMedia(f,f.name);
+  else{applyFileDate(S.add,f);setMedia(f,f.name)}
 });
 document.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.getAttribute&&e.target.getAttribute('role')==='button'){e.preventDefault();e.target.click()}});
 document.addEventListener('keydown',function(e){if(e.key!=='Escape')return;if(ED){edClose();return}if(!$('sheet').hidden)closeSheet()});
