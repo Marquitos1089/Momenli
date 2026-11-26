@@ -1205,6 +1205,7 @@ function ritHTML(){
     for(var j=a0;j<=a1&&j<=maxM;j++){tot++;if(ritMem('monat-'+j)){dn++;nPh++}sl+=slotHTML('monat-'+j,shortM(j))}
     out+='<details class="mgroup"'+(g===G?' open':'')+'><summary>'+(g===0?'Erstes Jahr':(g+1)+'. Lebensjahr')+'<span>'+dn+' von '+tot+'</span></summary><div class="slots">'+sl+'</div></details>';
   }
+  if(maxM<mMax())out+='<p class="tag" style="margin:8px 2px 0">Weitere Monate erscheinen, sobald '+esc(first())+' älter wird. Der nächste Monat ist immer schon vorbereitet'+(monthlyOn()?', bis zum 18. Geburtstag.':'.')+'</p>';
   out+='<button class="ghost" style="margin-top:10px" data-act="film-tl">'+ic('film',16)+'Aufwachsen im Zeitraffer ansehen</button>';
   var gs='';for(var g=1;g<=my;g++)gs+=slotHTML('geb-'+g,g+'. Geburtstag');
   out+='<h2 class="h2">Geburtstagsfotos</h2><div class="slots">'+gs+'</div>';
