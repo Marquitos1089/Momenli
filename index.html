@@ -349,6 +349,9 @@ details.more .fld{background:#fff}
 .app{padding-bottom:calc(180px + env(safe-area-inset-bottom,0px))}
 .stage .bigplay{justify-content:flex-start;padding-top:9%}
 .stage .bigplay b{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.fl .req{color:#C0392B;font-weight:700}
+#a-err{margin:6px 0 0}
+.primary[disabled]{opacity:.45;cursor:not-allowed;box-shadow:none}
 </style>
 </head>
 <body>
@@ -579,6 +582,7 @@ async function loadMediaUrls(){
   for(var j=0;j<al.length;j++){var L=al[j];if(L.mediaId&&!L.url){try{var lb=await dbGet('media:'+L.mediaId);if(lb)L.url=URL.createObjectURL(lb);else L.mediaId=0}catch(e){}}}
   try{var mu=await dbGet('music');if(mu&&mu.blob)setCustomMusic(mu.blob,mu.name,true)}catch(e){}
 }
+function lettersOf(Y,r){r=r||R();return Object.keys(r.letters).filter(function(k){return k===String(Y)||k.indexOf(Y+'#')===0}).sort(function(a,b){if(a===String(Y))return -1;if(b===String(Y))return 1;var x=r.letters[a].written||'',y=r.letters[b].written||'';return x<y?-1:x>y?1:(a<b?-1:1)})}
 function allLetters(){var a=[];S.kids.forEach(function(k){if(k.rit)for(var y in k.rit.letters)a.push(k.rit.letters[y])});return a}
 function revokeAll(){allMem().concat(allLetters()).forEach(function(m){if(m.url)URL.revokeObjectURL(m.url)})}
 
@@ -1109,7 +1113,7 @@ function dueItems(){
   var nb=bday(y+1),dn=Math.round((nb-TODAY)/DAY);
   if(dn<=60)out.push({t:(y+1)+'. Geburtstag in '+days(dn),s:'Brief schreiben, Mini-Interview, Geburtstagsfoto',act:'rit-year',v:String(y+1),since:new Date(nb-21*DAY)});
   if(y>=1){
-    var miss=[];if(!r.letters[y])miss.push('Brief');if(!r.interviews[y])miss.push('Interview');if(!ritMem('geb-'+y))miss.push('Foto');
+    var miss=[];if(!lettersOf(y,r).length)miss.push('Brief');if(!r.interviews[y])miss.push('Interview');if(!ritMem('geb-'+y))miss.push('Foto');
     if(miss.length&&dn>60)out.push({t:'Zum '+y+'. Geburtstag fehlt noch',s:miss.join(', ')+'. Lässt sich nachtragen.',act:'rit-year',v:String(y),since:bday(y)});
   }
   var last=r.measures.slice().sort(function(a,b){return a.date<b.date?1:-1})[0],ld=last?parseISO(last.date):null,gap=ld?Math.round((TODAY-ld)/DAY):999;
@@ -1174,10 +1178,12 @@ function ritHTML(){
   out+='<button class="ghost" style="margin-top:8px" data-act="ics">'+ic('calendar',16)+'Erinnerungen in meinen Kalender</button>';
   /* Geburtstag */
   var chips='';for(var i=1;i<=my;i++)chips+='<button class="chip'+(i<curY?' past':'')+(i===curY?' now':'')+'" data-act="rit-year" data-v="'+i+'" aria-pressed="'+(i===Y)+'">'+i+'. Geburtstag</button>';
-  var L=r.letters[Y],I=r.interviews[Y],na=I?Object.keys(I.answers||{}).length:0,gm=ritMem('geb-'+Y);
+  var LK=lettersOf(Y,r),I=r.interviews[Y],na=I?Object.keys(I.answers||{}).length:0,gm=ritMem('geb-'+Y);
   out+='<h2 class="h2" id="rit-bday">Zum Geburtstag</h2><div class="chips" id="rit-chips">'+chips+'</div>'
    +'<p class="tag" style="margin:6px 0 10px">'+fmtDate(bd)+(past?'':' · in '+days(Math.round((bd-TODAY)/DAY)))+'</p>'
-   +'<button class="ms open'+(L?' done':'')+'" data-act="lt-open" data-v="'+Y+'"><span class="mk">'+ic(L?'check':'mail',18)+'</span><div><h3>Brief an '+esc(first())+'</h3><p class="meta">'+(L?('Von '+esc(L.from||'Mama und Papa')+(L.mediaId?' · mit Sprachnachricht':'')):(past?'Noch nicht geschrieben. Lässt sich nachtragen.':'Schon vorher schreiben und zum Geburtstag aufheben.'))+'</p></div><span class="mini">'+(L?'Lesen':'Schreiben')+'</span></button>'
+   +(LK.length?LK.map(function(k){var L=r.letters[k];return '<button class="ms open done" data-act="lt-open" data-v="'+Y+'" data-key="'+esc(k)+'"><span class="mk">'+ic('check',18)+'</span><div><h3>Brief von '+esc(L.from||'Mama und Papa')+'</h3><p class="meta">'+(L.text?(L.mediaId?'Text und Sprachnachricht':'Brief'):'Sprachnachricht')+(L.written?' · geschrieben am '+fmtShort(parseISO(L.written)):'')+'</p></div><span class="mini">Lesen</span></button>'}).join('')
+      +'<button class="ghost" style="margin:2px 0 10px" data-act="lt-open" data-v="'+Y+'">'+ic('plus',16)+'Weiteren Brief schreiben</button>'
+     :'<button class="ms open" data-act="lt-open" data-v="'+Y+'"><span class="mk">'+ic('mail',18)+'</span><div><h3>Brief an '+esc(first())+'</h3><p class="meta">'+(past?'Noch nicht geschrieben. Lässt sich nachtragen.':'Schon vorher schreiben und zum Geburtstag aufheben.')+' Jeder kann einen eigenen Brief schreiben.</p></div><span class="mini">Schreiben</span></button>')
    +'<button class="ms open'+(na?' done':'')+'" data-act="iv-open" data-v="'+Y+'"><span class="mk">'+ic(na?'check':'chat',18)+'</span><div><h3>Mini-Interview mit '+yrs(Y)+'</h3><p class="meta">'+(na?na+' von '+ivQs(Y,I).length+' Fragen beantwortet':(Y<3?'Fragen an euch: was ihr bei '+esc(first())+' beobachtet':'Jedes Jahr dieselben Fragen, dazu passende fürs Alter'))+'</p></div><span class="mini">'+(na?'Ansehen':'Starten')+'</span></button>'
    +(gm?'<button class="ms open done" data-act="open" data-id="'+gm.id+'"><span class="mk">'+ic('check',18)+'</span><div><h3>Geburtstagsfoto</h3><p class="meta">'+fmtShort(gm.date)+' · '+esc(gm.title)+'</p></div><span class="mini">Ansehen</span></button>'
        :'<button class="ms open" data-act="rit-photo" data-v="geb-'+Y+'"><span class="mk">'+ic('camera',18)+'</span><div><h3>Geburtstagsfoto</h3><p class="meta">Jedes Jahr am selben Ort oder mit demselben Kuscheltier</p></div><span class="mini">Foto</span></button>');
@@ -1207,12 +1213,13 @@ function ritHTML(){
 }
 
 /* Brief */
-function letterHTML(Y){
-  var L=R().letters[Y]||{};S.lt={year:Y,blob:null,dur:0,file:'',img:null,type:'s'};
+function letterHTML(Y,key){
+  var isNew=!key||!R().letters[key];if(isNew)key=Y+'#'+newId();
+  var L=R().letters[key]||{};S.lt={year:Y,key:key,blob:null,dur:0,file:'',img:null,type:'s'};
   return '<div class="grab"></div><div class="sh-head"><h2>Brief zum '+Y+'. Geburtstag</h2><button class="icon-btn" data-act="close" aria-label="Schließen">'+ic('x',18)+'</button></div>'
    +'<p class="tag" style="margin:0">'+esc(first())+' wird am '+fmtDate(bday(Y))+' '+Y+(Y===1?' Jahr':' Jahre')+' alt.</p>'
    +'<label class="fl" for="lt-text">Euer Brief</label><textarea class="fld" id="lt-text" rows="9" style="min-height:200px" placeholder="Liebe/r '+esc(first())+', in diesem Jahr …">'+esc(L.text||'')+'</textarea>'
-   +'<label class="fl" for="lt-from">Von</label><input class="fld" id="lt-from" value="'+esc(L.from||'Mama und Papa')+'">'
+   +'<label class="fl" for="lt-from">Von wem?</label><input class="fld" id="lt-from" placeholder="z. B. Mama, Papa, Oma Rosi" value="'+esc(L.from||(isNew?'':'Mama und Papa'))+'">'
    +'<label class="fl">Sprachnachricht (freiwillig)</label>'
    +(L.url?'<audio src="'+L.url+'" controls preload="metadata" style="width:100%"></audio>':'')
    +'<div id="lt-cap">'+ltCapHTML()+'</div>'
@@ -1223,12 +1230,12 @@ function letterHTML(Y){
 function recRow(forWhat){var on=!!REC;return '<div class="recrow"><button class="rec'+(on?' on':'')+'" data-act="rec" data-for="'+forWhat+'"><span class="dot"></span><span>'+(on?'Aufnahme beenden':'Jetzt aufnehmen')+'</span></button><span class="small" id="rec-time" style="margin:0"></span></div>'}
 function ltCapHTML(){
   var A=S.lt;
-  return '<label class="drop" for="lt-file" style="min-height:64px;margin-top:6px">'+ic('mic',22)+'<span>'+esc(A.file||((R().letters[A.year]||{}).mediaId?'Neue Sprachnachricht wählen (ersetzt die alte)':'Audiodatei auswählen'))+'</span></label><input class="vh" type="file" id="lt-file" accept="audio/*">'+recRow('lt');
+  return '<label class="drop" for="lt-file" style="min-height:64px;margin-top:6px">'+ic('mic',22)+'<span>'+esc(A.file||((R().letters[A.key]||{}).mediaId?'Neue Sprachnachricht wählen (ersetzt die alte)':'Audiodatei auswählen'))+'</span></label><input class="vh" type="file" id="lt-file" accept="audio/*">'+recRow('lt');
 }
 function refreshLt(){var c=$('lt-cap');if(c)c.innerHTML=ltCapHTML()}
 async function letterSave(){
   if(REC){toast('Bitte beende zuerst die Aufnahme.');return}
-  var A=S.lt,r=R(),L=r.letters[A.year]||{},txt=$('lt-text').value.trim();
+  var A=S.lt,r=R(),L=r.letters[A.key]||{},txt=$('lt-text').value.trim();
   if(!txt&&!A.blob&&!L.mediaId){$('lt-err').hidden=false;return}
   L.text=txt;L.from=$('lt-from').value.trim()||'Mama und Papa';L.written=L.written||iso(TODAY);
   if(A.blob){
@@ -1237,9 +1244,9 @@ async function letterSave(){
     if(L.mediaId){dbDel('media:'+L.mediaId).catch(function(){});if(L.url)URL.revokeObjectURL(L.url)}
     L.mediaId=id;L.dur=A.dur||0;L.url=URL.createObjectURL(A.blob);
   }
-  L.upd=Date.now();r.letters[A.year]=L;save();closeSheet();render();toast('Brief gespeichert');
+  L.upd=Date.now();r.letters[A.key]=L;save();closeSheet();render();toast('Brief gespeichert');
 }
-function letterDel(Y){var r=R(),L=r.letters[Y];if(!L)return;if(L.mediaId){dbDel('media:'+L.mediaId).catch(function(){});if(L.url)URL.revokeObjectURL(L.url)}delete r.letters[Y];save();closeSheet();render();toast('Brief gelöscht')}
+function letterDel(Y){var r=R(),L=r.letters[Y];if(!L)return;if(L.mediaId){dbDel('media:'+L.mediaId).catch(function(){});if(L.url)URL.revokeObjectURL(L.url)}delete r.letters[Y];markDel('lt:'+Y);save();closeSheet();render();toast('Brief gelöscht')}
 
 /* Mini-Interview */
 function ivHTML(Y,keep){
@@ -1304,7 +1311,8 @@ function icsFile(){
 /* Film-Szenen aus den Ritualen */
 function ritFilmItems(){
   var r=R(),out=[];
-  Object.keys(r.letters).forEach(function(k){var d=bday(+k);if(d<=TODAY)out.push({kind:'letter',date:d,y:+k,L:r.letters[k],id:9e6+ +k})});
+  var ys={};Object.keys(r.letters).forEach(function(k){ys[parseInt(k,10)]=1});
+  Object.keys(ys).forEach(function(y){y=+y;var d=bday(y);if(d<=TODAY)lettersOf(y,r).forEach(function(k,i){out.push({kind:'letter',date:d,y:y,L:r.letters[k],id:9e6+y*100+i})})});
   Object.keys(r.interviews).forEach(function(k){var d=bday(+k);if(d<=TODAY&&Object.keys(r.interviews[k].answers||{}).length)out.push({kind:'iv',date:d,y:+k,I:r.interviews[k],id:9.1e6+ +k})});
   return out;
 }
@@ -1410,7 +1418,7 @@ function ideasHTML(){
 }
 /* ---------- Kurze Anleitung ---------- */
 var TOUR={i:0,steps:[
- {sel:'.fab',icon:'plus',t:'Neuen Moment festhalten',d:'Mit dem grünen Plus speicherst du Fotos, Videos oder Sprachnachrichten. Das Datum wird aus dem Foto übernommen, ein Titel ist nicht nötig.'},
+ {sel:'.fab',icon:'plus',t:'Neuen Moment festhalten',d:'Mit dem grünen Plus speicherst du Fotos, Videos oder Sprachnachrichten. Das Datum wird aus dem Foto übernommen, du gibst nur noch einen kurzen Titel ein.'},
  {tab:'ideas',icon:'award',t:'Ideen und Meilensteine',d:'Über 300 Ideen passend zum Alter. Einträge mit Stern sind Meilensteine wie das erste Lächeln. Antippen, Foto dazu, fertig.'},
  {tab:'rit',icon:'repeat',t:'Rituale, Steckbrief und Film',d:'Unter Rituale findest du Monatsfotos, Briefe und Interviews zum Geburtstag. Im Steckbrief stehen die Geschichte deines Kindes, Größe und Gewicht und die Sicherung. Aus allem entsteht automatisch ein Film.'}
 ]};
@@ -1715,14 +1723,15 @@ function addHTML(){
   var seg=[['f','Foto'],['v','Video'],['s','Sprache']].map(function(x){return '<button class="segb" data-act="add-type" data-type="'+x[0]+'" aria-pressed="'+(S.add.type===x[0])+'">'+ic(typeIcon(x[0]),22)+x[1]+'</button>'}).join('');
   return '<div class="grab"></div><div class="sh-head"><h2>'+(E?'Moment bearbeiten':'Neuer Moment')+'</h2><button class="icon-btn" data-act="close" aria-label="Schließen">'+ic('x',18)+'</button></div>'
    +(E?'':'<div class="seg" role="group" aria-label="Art des Moments">'+seg+'</div>')+'<div id="cap">'+capHTML()+'</div>'
-   +'<label class="fl" for="a-title">Titel <span class="opt">(optional)</span></label><input class="fld" id="a-title" placeholder="'+esc(at||'Wird sonst automatisch vergeben')+'" value="'+esc(E?E.title:at)+'" data-auto="'+esc(E?'':at)+'">'
+   +'<label class="fl" for="a-title">Titel <span class="req" aria-hidden="true">*</span></label><input class="fld" id="a-title" required aria-required="true" aria-describedby="a-err" placeholder="z. B. Erstes Lachen beim Wickeln" value="'+esc(E?E.title:at)+'" data-auto="'+esc(E?'':at)+'">'
+   +'<p class="err" id="a-err"'+((E?E.title:at)?' hidden':'')+'>Bitte gib einen Titel ein. Dann lässt sich der Moment speichern.</p>'
    +'<label class="fl" for="a-date">Datum</label><input class="fld" type="date" id="a-date" value="'+(E?iso(E.date):ritDefaultDate(A.rit))+'" max="'+iso(TODAY)+'">'
    +'<label class="fl" for="a-note">Notiz</label><textarea class="fld" id="a-note" placeholder="Was macht diesen Moment besonders?">'+esc(E?E.note:'')+'</textarea>'
    +'<label class="tog" style="margin-top:16px"><input type="checkbox" id="a-story"'+((E?E.story:A.story)?' checked':'')+'><span>In „Meine Geschichte“ aufnehmen<br><small class="tag">Erscheint im Steckbrief in der Lebensgeschichte. Meilensteine stehen dort sowieso.</small></span></label>'
    +'<details class="more"'+((A.ms||A.rit||(E&&(E.ms||E.rit)))?' open':'')+'><summary>Mehr: Meilenstein, wiederkehrendes Foto</summary>'
    +'<label class="fl" for="a-ms">Meilenstein</label><select class="fld" id="a-ms"><option value="">Kein Meilenstein</option>'+pend+'</select>'
    +'<label class="fl" for="a-rit">Wiederkehrendes Foto</label><select class="fld" id="a-rit">'+ritOptions(S.add.rit)+'</select></details>'
-   +'<p class="err" id="a-err" hidden>Bitte gib einen Titel ein.</p><button class="primary" data-act="save">'+(E?'Änderungen speichern':'Moment speichern')+'</button>';
+   +'<button class="primary" data-act="save"'+((E?E.title:at)?'':' disabled')+'>'+(E?'Änderungen speichern':'Moment speichern')+'</button>';
 }
 /* Vorschau (max. 1280 px, im Speicherstand) und Druckfassung (max. 2400 px, eigene Datei) */
 var PREV_PX=1280,HQ_PX=2400;
@@ -1787,13 +1796,14 @@ async function storePics(m,A){
     if(p.origBlob){try{await dbPut('orig:'+p.pid,p.origBlob);p.orig=!!DB}catch(e){}}}
   setPics(m,A.photos.map(function(p){var o={pid:p.pid,img:p.img,hq:!!p.hq};if(p.orig)o.orig=true;if(p.ed)o.ed=p.ed;return o}));
 }
+function titleState(){var ti=$('a-title');if(!ti)return;var ok=!!ti.value.trim(),er=$('a-err'),b=document.querySelector('#sheet [data-act=save]')||document.querySelector('[data-act=save]');if(er)er.hidden=ok;if(b)b.disabled=!ok;ti.classList.toggle('bad',!ok)}
 async function saveMoment(){
   var title=$('a-title').value.trim();
   if(REC){toast('Bitte beende zuerst die Aufnahme.');return}
   if(S.add.busy){toast('Fotos werden noch vorbereitet …');return}
   var A=S.add,d=parseISO($('a-date').value)||TODAY;
   if(d>TODAY)d=TODAY;
-  if(!title)title=autoTitle()||(typeName(A.type)+' vom '+fmtShort(d));
+  if(!title){titleState();$('a-title').focus();return}
   if(A.edit){
     var em=memById(A.edit);if(!em){closeSheet();return}
     if(em.type==='f')await storePics(em,A);
@@ -1883,7 +1893,8 @@ async function mergeFile(file){
       });
       lk.mem=lk.mem.filter(function(m){if(del['mem:'+m.id]){if(m.url)URL.revokeObjectURL(m.url);delPics(m);return false}return true});
       var rr=rk.rit||emptyRit(),lr=lk.rit=lk.rit||emptyRit();
-      ['letters','interviews'].forEach(function(t){lr[t]=lr[t]||{};for(var y in (rr[t]||{})){if(!lr[t][y]||newer(rr[t][y],lr[t][y])){var keepUrl=lr[t][y]&&lr[t][y].url;lr[t][y]=rr[t][y];if(t==='letters'&&rr[t][y].mediaId){need.push(rr[t][y].mediaId);if(keepUrl)URL.revokeObjectURL(keepUrl)}}}});
+      ['letters','interviews'].forEach(function(t){lr[t]=lr[t]||{};for(var y in (rr[t]||{})){if(t==='letters'&&del['lt:'+y])continue;if(!lr[t][y]||newer(rr[t][y],lr[t][y])){var keepUrl=lr[t][y]&&lr[t][y].url;lr[t][y]=rr[t][y];if(t==='letters'&&rr[t][y].mediaId){need.push(rr[t][y].mediaId);if(keepUrl)URL.revokeObjectURL(keepUrl)}}}});
+      for(var ly in lr.letters)if(del['lt:'+ly]){var dl=lr.letters[ly];if(dl.mediaId)dbDel('media:'+dl.mediaId).catch(function(){});if(dl.url)URL.revokeObjectURL(dl.url);delete lr.letters[ly]}
       (rr.measures||[]).forEach(function(x){if(!del['msr:'+x.id]&&!lr.measures.some(function(y){return y.id===x.id}))lr.measures.push(x)});
       lr.measures=lr.measures.filter(function(x){return !del['msr:'+x.id]});
       lr.hid=Object.assign({},rr.hid||{},lr.hid||{});
@@ -1954,9 +1965,9 @@ document.addEventListener('click',function(e){
   else if(a==='rit-photo'){var tg=b.getAttribute('data-v');closeSheet();S.add=newAdd('f',tg);openSheet(addHTML())}
   else if(a==='rit-year'){S.ritYear=+b.getAttribute('data-v');if(S.tab!=='rit'){S.tab='rit'}render();var rb=$('rit-bday');if(rb)rb.scrollIntoView({block:'start'})}
   else if(a==='rit-q'){S.ritQ=b.getAttribute('data-v');render()}
-  else if(a==='lt-open'){openSheet(letterHTML(+b.getAttribute('data-v')))}
+  else if(a==='lt-open'){openSheet(letterHTML(+b.getAttribute('data-v'),b.getAttribute('data-key')))}
   else if(a==='lt-save')letterSave();
-  else if(a==='lt-del')letterDel(S.lt.year);
+  else if(a==='lt-del')letterDel(S.lt.key);
   else if(a==='iv-open'){openSheet(ivHTML(+b.getAttribute('data-v')))}
   else if(a==='iv-save')ivSave();
   else if(a==='iv-addq'){var nq=$('iv-newq').value.trim();if(!nq)return;var keep=ivCollect();R().qs.push({id:'q'+newId(),q:nq});save();$('sheet').innerHTML=ivHTML(S.iv,keep);toast('Frage hinzugefügt, sie kommt jetzt jedes Jahr')}
@@ -2047,6 +2058,7 @@ document.addEventListener('click',function(e){
 document.addEventListener('input',function(e){
   var t=e.target;
   if(t.id==='fscrub')filmSeek(t.value);
+  else if(t.id==='a-title')titleState();
   else if(t.id==='cam-o'){var cg=$('cam-g');if(cg)cg.style.opacity=t.value/100}
 
 });
@@ -2058,7 +2070,7 @@ document.addEventListener('change',function(e){
     if(S.add){if(t.id==='a-rit')S.add.rit=t.value;else S.add.ms=t.value}
     if(t.id==='a-rit')refreshCap();
     var ti=$('a-title'),nt=t.value?(t.id==='a-rit'?ritLabel(t.value):msLabel(t.value)):autoTitle();
-    if(ti&&(!ti.value.trim()||ti.value===ti.getAttribute('data-auto'))){ti.value=nt;ti.setAttribute('data-auto',nt)}
+    if(ti&&(!ti.value.trim()||ti.value===ti.getAttribute('data-auto'))){ti.value=nt;ti.setAttribute('data-auto',nt);titleState()}
     if(t.id==='a-rit'&&t.value&&!(S.add&&S.add.edit))$('a-date').value=ritDefaultDate(t.value);
     return}
   if(t.id&&t.id.indexOf('pf-')===0)return;
