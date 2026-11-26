@@ -1,6 +1,6 @@
 /* Momenli Service Worker: hält die App offline verfügbar.
    Bei jeder neuen Version VERSION hochzählen, damit Geräte die neue Seite laden. */
-var VERSION = 'momenli-v14';
+var VERSION = 'momenli-v15';
 var FILES = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {

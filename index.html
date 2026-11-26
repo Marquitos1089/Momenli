@@ -1054,17 +1054,25 @@ function slotHTML(tag,label){
   if(m)return '<button class="slot" data-act="open" data-id="'+m.id+'">'+cover(m,'sm')+'<span>'+label+'</span></button>';
   return '<button class="slot" data-act="rit-photo" data-v="'+tag+'"><span class="slot-e">'+ic('plus',18)+'</span><span>'+label+'</span></button>';
 }
-function chartHTML(ms){
-  if(ms.length<2)return '';
-  var pts=ms.map(function(x){return [ageMonths(parseISO(x.date))+((parseISO(x.date).getDate()-BIRTH.getDate()+30)%30)/30,x.cm]}).filter(function(p){return p[1]!=null});
-  if(pts.length<2)return '';
-  var x0=0,x1=Math.max(12,pts[pts.length-1][0]),y0=Math.floor(Math.min.apply(null,pts.map(function(p){return p[1]}))/10)*10,y1=Math.ceil(Math.max.apply(null,pts.map(function(p){return p[1]}))/10)*10;
-  if(y1===y0)y1+=10;
+var GK={cm:['Größe','cm'],kg:['Gewicht','kg'],head:['Kopfumfang','cm']};
+function chartPts(ms,k){return ms.map(function(x){return [ageMonths(parseISO(x.date))+((parseISO(x.date).getDate()-BIRTH.getDate()+30)%30)/30,x[k]]}).filter(function(p){return p[1]!=null&&p[1]!==''})}
+function growthKeys(ms){return ['cm','kg','head'].filter(function(k){return ms.some(function(x){return x[k]!=null&&x[k]!==''})})}
+function growthKey(ms){var ks=growthKeys(ms);return ks.indexOf(S.gk)>=0?S.gk:(ks[0]||'cm')}
+function growthChips(ms){var ks=growthKeys(ms),cur=growthKey(ms);if(ks.length<2)return '';
+  return '<div class="chips" style="margin:12px 0 0">'+ks.map(function(k){return '<button class="chip" data-act="gk" data-v="'+k+'" aria-pressed="'+(k===cur)+'">'+GK[k][0]+' ('+GK[k][1]+')</button>'}).join('')+'</div>'}
+function chartHTML(ms,k){
+  k=k||'cm';
+  var pts=chartPts(ms,k);
+  if(pts.length<2)return '<p class="tag" style="margin:10px 0 4px">Für den Verlauf beim '+GK[k][0]+' braucht es mindestens zwei Messungen.</p>';
+  var vs=pts.map(function(p){return p[1]}),mn=Math.min.apply(null,vs),mx=Math.max.apply(null,vs),rg=Math.max(mx-mn,k==='kg'?1:4);
+  var st=[0.5,1,2,5,10,20].filter(function(x){return rg/x<=5})[0]||20;
+  var x0=0,x1=Math.max(12,pts[pts.length-1][0]),y0=Math.floor(mn/st)*st,y1=Math.ceil(mx/st)*st;
+  if(y1===y0)y1+=st;
   var W=320,H=150,L=34,B=22,T=10,Rr=10;
   var X=function(v){return L+(v-x0)/(x1-x0)*(W-L-Rr)},Y=function(v){return T+(1-(v-y0)/(y1-y0))*(H-T-B)};
-  var grid='';for(var g=y0;g<=y1;g+=10)grid+='<line x1="'+L+'" x2="'+(W-Rr)+'" y1="'+Y(g)+'" y2="'+Y(g)+'" stroke="var(--line)"/><text x="'+(L-6)+'" y="'+(Y(g)+4)+'" text-anchor="end">'+g+'</text>';
+  var grid='';for(var g=y0;g<=y1+1e-9;g+=st)grid+='<line x1="'+L+'" x2="'+(W-Rr)+'" y1="'+Y(g)+'" y2="'+Y(g)+'" stroke="var(--line)"/><text x="'+(L-6)+'" y="'+(Y(g)+4)+'" text-anchor="end">'+fmtNum(Math.round(g*10)/10)+'</text>';
   var xt='';for(var m=0;m<=x1;m+=(x1>24?12:6))xt+='<text x="'+X(m)+'" y="'+(H-6)+'" text-anchor="middle">'+(m%12===0&&m?m/12+' J.':m+' M.')+'</text>';
-  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Größe in Zentimetern nach Alter">'+grid+xt
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+GK[k][0]+' in '+GK[k][1]+' nach Alter">'+grid+xt
    +'<polyline fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" points="'+pts.map(function(p){return X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)}).join(' ')+'"/>'
    +pts.map(function(p){return '<circle cx="'+X(p[0]).toFixed(1)+'" cy="'+Y(p[1]).toFixed(1)+'" r="3.2" fill="var(--accent)"/>'}).join('')+'</svg>';
 }
@@ -1074,7 +1082,7 @@ function growthHTML(){
   out+='<h2 class="h2">Größe und Gewicht</h2>';
   if(ms.length){
     var lt=ms[ms.length-1];
-    out+='<div class="card pad"><p style="margin:0"><strong>'+fmtNum(lt.cm)+' cm</strong>'+(lt.kg!=null?' · '+fmtNum(lt.kg,2)+' kg':'')+'<span class="tag"> am '+fmtShort(parseISO(lt.date))+'</span></p>'+chartHTML(ms)
+    out+='<div class="card pad"><p style="margin:0"><strong>'+fmtNum(lt.cm)+' cm</strong>'+(lt.kg!=null?' · '+fmtNum(lt.kg,2)+' kg':'')+'<span class="tag"> am '+fmtShort(parseISO(lt.date))+'</span></p>'+growthChips(ms)+chartHTML(ms,growthKey(ms))
      +'<details class="msr"><summary>Alle '+ms.length+' Messungen</summary>'+ms.slice().reverse().map(function(x){return '<div class="msrow"><span>'+fmtShort(parseISO(x.date))+'<small> · '+ageText(parseISO(x.date))+'</small></span><span>'+[x.cm!=null?fmtNum(x.cm)+' cm':'',x.kg!=null?fmtNum(x.kg,2)+' kg':'',x.head!=null?'KU '+fmtNum(x.head)+' cm':''].filter(Boolean).join(' · ')+'</span><button class="icon-btn" data-act="msr-del" data-v="'+x.id+'" data-confirm="✕?" aria-label="Messung löschen">'+ic('trash',14)+'</button></div>'}).join('')+'</details></div>';
   }else out+='<p class="tag">Noch keine Messung. Die Werte aus dem gelben U-Heft lassen sich gut nachtragen.</p>';
   out+='<button class="dash" data-act="msr-open">'+ic('plus',18)+'Messung eintragen</button>';
@@ -1696,6 +1704,7 @@ document.addEventListener('click',function(e){
   else if(a==='iv-addq'){var nq=$('iv-newq').value.trim();if(!nq)return;var keep=ivCollect();R().qs.push({id:'q'+newId(),q:nq});save();$('sheet').innerHTML=ivHTML(S.iv,keep);toast('Frage hinzugefügt, sie kommt jetzt jedes Jahr')}
   else if(a==='msr-open')openSheet(msrHTML());
   else if(a==='msr-save')msrSave();
+  else if(a==='gk'){S.gk=b.getAttribute('data-v');var y0=window.scrollY;render();window.scrollTo(0,y0)}
   else if(a==='msr-del'){var mid=b.getAttribute('data-v');R().measures=R().measures.filter(function(x){return x.id!==mid});markDel('msr:'+mid);save();render()}
   else if(a==='ics'){download(new Blob([icsFile()],{type:'text/calendar'}),'Momenli_Erinnerungen_'+first()+'.ics');toast('Kalenderdatei geladen. Öffne sie, um die Termine zu übernehmen.')}
   else if(a==='save')saveMoment();
