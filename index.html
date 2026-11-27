@@ -1502,12 +1502,11 @@ function tabsHTML(){
   }).join('')+(S.tab==='film'?'':'<button class="fab" data-act="add" aria-label="Neuen Moment hinzufügen">'+ic('plus',26)+'</button>');
 }
 var FARBEN=[['mint','Mint'],['blau','Hellblau'],['rose','Rosé']];
-function farbeOf(p){p=p||S.profile||{};if(p.farbe&&FARBEN.some(function(f){return f[0]===p.farbe}))return p.farbe;return p.sex==='j'?'blau':(p.sex==='m'?'rose':'mint')}
+function farbeOf(p){p=p||S.profile||{};return p.sex==='j'?'blau':(p.sex==='m'?'rose':'mint')}
 function applyFarbe(){var f=S.tab==='welcome'?(S.wSex==='j'?'blau':S.wSex==='m'?'rose':'mint'):farbeOf();document.documentElement.setAttribute('data-farbe',f);var tm=document.querySelector('meta[name=theme-color]');if(tm)tm.setAttribute('content',{mint:'#F2F7F1',blau:'#EFF4F9',rose:'#FBF0EF'}[f])}
 function cssVar(n,d){var v=getComputedStyle(document.documentElement).getPropertyValue(n).trim();return v||d}
 function sexChips(cur,act){return '<div class="chips" role="group" aria-label="Junge oder Mädchen">'+[['j','Junge'],['m','Mädchen'],['','Keine Angabe']].map(function(x){return '<button class="chip" data-act="'+act+'" data-v="'+x[0]+'" aria-pressed="'+((cur||'')===x[0])+'">'+x[1]+'</button>'}).join('')+'</div>'}
-function farbeHTML(){var cur=farbeOf();return '<h2 class="h2">Farben der App</h2><div class="card pad"><p class="tag" style="margin:0 0 8px">'+esc(first())+' ist</p>'+sexChips(S.profile.sex,'pf-sex')
-  +'<p class="tag" style="margin:14px 0 8px">Farbwelt'+(S.profile.farbe?'':' (passt sich automatisch an)')+'</p><div class="swatches">'+FARBEN.map(function(f){return '<button class="sw sw-'+f[0]+'" data-act="pf-farbe" data-v="'+f[0]+'" aria-pressed="'+(cur===f[0])+'"><i></i>'+f[1]+'</button>'}).join('')+'</div></div>'}
+function farbeHTML(){return '<h2 class="h2">Junge oder Mädchen</h2><div class="card pad">'+sexChips(S.profile.sex,'pf-sex')+'</div>'}
 function render(){
   filmStop();
   $('tabs').hidden=S.tab==='welcome';applyFarbe();
