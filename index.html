@@ -19,7 +19,7 @@
 :root{
   --bg:#FBF6EF; --surface:#FFFFFF; --ink:#1F2A26; --muted:#66736D; --line:#E4E8E3;
   --accent:#19805F; --accent-ink:#FFFFFF; --accent-soft:#D4F2E5; --ok:#4E9A6B;
-  --mint:#6FD3AE; --mint-ink:#0F3D2D; --mint-soft:#D4F2E5; --mint-text:#17654A; --mint-line:#3FB88A;
+  --mint:#6FD3AE; --mint-ink:#0F3D2D; --mint-soft:#D4F2E5; --mint-text:#17654A; --mint-line:#3FB88A; --mint-pale:#A8E8D0;
   --cv-s:70%; --cv-l:92%; --cv-l2:86%; --cv-ink:#24302B;
   --font-display:'Bricolage Grotesque','Avenir Next','Segoe UI',sans-serif;
   --font-body:'Figtree','Segoe UI',system-ui,sans-serif;
@@ -146,7 +146,7 @@ textarea.fld{resize:vertical;min-height:84px}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @keyframes kb{from{transform:scale(1)}to{transform:scale(1.09)}}
 .sc h2{font:700 clamp(2.8rem,14vw,4.2rem)/.95 var(--font-display);letter-spacing:-.04em;margin:10px 0}
-.eyebrow{font:600 .75rem var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:#A8E8D0;margin:0}
+.eyebrow{font:600 .75rem var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--mint-pale);margin:0}
 .sc .lead{font-size:1.15rem;margin:0}
 .sc .sub{color:#B9BAD6;margin:6px 0 0}
 .sc-mem{padding:0!important;justify-content:flex-end!important}
@@ -156,11 +156,11 @@ textarea.fld{resize:vertical;min-height:84px}
 .cap{position:relative;z-index:1;padding:70px 22px 24px;background:linear-gradient(to top,rgba(10,11,25,.9),rgba(10,11,25,0))}
 .cap h3{font:700 1.8rem/1.05 var(--font-display);letter-spacing:-.03em;margin:8px 0 4px;color:#fff}
 .cap p{margin:0;color:#D5D6EA;font-size:.9rem}
-.cap .pill{background:#6FD3AE;color:#0F3D2D}
-.fp{position:absolute;top:0;left:0;height:4px;width:0;background:#6FD3AE;z-index:3}
+.cap .pill{background:var(--mint);color:var(--mint-ink)}
+.fp{position:absolute;top:0;left:0;height:4px;width:0;background:var(--mint);z-index:3}
 .bigplay{position:absolute;inset:0;z-index:4;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:rgba(10,11,25,.5);border:0;color:#fff;font:600 1rem var(--font-body);cursor:pointer}
 .stage[data-state="idle"] .bigplay,.stage[data-state="ended"] .bigplay{display:flex}
-.bigplay span{width:76px;height:76px;border-radius:50%;background:#6FD3AE;color:#0F3D2D;display:grid;place-items:center}
+.bigplay span{width:76px;height:76px;border-radius:50%;background:var(--mint);color:var(--mint-ink);display:grid;place-items:center}
 .stage.paused .kb{animation-play-state:paused!important}
 .ctrl{display:flex;align-items:center;gap:14px;margin:16px 0 4px}
 .pbtn{flex:none;width:52px;height:52px;border-radius:18px;background:var(--accent);color:var(--accent-ink);border:0;display:grid;place-items:center;cursor:pointer}
@@ -255,7 +255,7 @@ details.mgroup summary span{margin-left:auto;font:400 .8rem var(--font-body);col
 .tdots i.on{background:var(--accent);width:20px;border-radius:4px}
 .tour-hl{position:relative;z-index:60;animation:pulse 1.4s ease-in-out infinite}
 .tab.tour-hl{color:var(--accent)}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(25,128,95,.5)}50%{box-shadow:0 0 0 10px rgba(25,128,95,0)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 50%,transparent)}50%{box-shadow:0 0 0 10px transparent}}
 .tab.tour-hl{border-radius:14px;background:var(--accent-soft)}
 .sheet.tourmode{bottom:auto;top:max(14px,env(safe-area-inset-top,0px));border-radius:26px;width:min(calc(100% - 24px),500px);max-height:70vh;animation:fade .25s ease both;box-shadow:0 18px 50px rgba(10,11,25,.3)}
 .sheet.tourmode .grab{display:none}
@@ -352,6 +352,17 @@ details.more .fld{background:#fff}
 .fl .req{color:#C0392B;font-weight:700}
 #a-err{margin:6px 0 0}
 .primary[disabled]{opacity:.45;cursor:not-allowed;box-shadow:none}
+
+/* Farbwelten je Kind */
+html[data-farbe=blau]{--accent:#2F6FA8;--accent-soft:#DCEBF8;--mint:#8EC5EC;--mint-ink:#0E2F4A;--mint-soft:#DCEBF8;--mint-text:#235A8A;--mint-line:#5AA6DA;--mint-pale:#BFE0F5;--ok:#3F7FB5}
+html[data-farbe=rose]{--accent:#B4506A;--accent-soft:#F8DDE3;--mint:#F2A7B8;--mint-ink:#4A1525;--mint-soft:#F8DDE3;--mint-text:#9A3F56;--mint-line:#E07F98;--mint-pale:#F7C9D4;--ok:#B4506A}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.sw{display:flex;align-items:center;gap:8px;padding:8px 14px 8px 8px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);font:600 .9rem var(--font-body);color:var(--ink);cursor:pointer}
+.sw i{width:24px;height:24px;border-radius:50%;display:block}
+.sw-mint i{background:linear-gradient(135deg,#6FD3AE 50%,#19805F 50%)}
+.sw-blau i{background:linear-gradient(135deg,#8EC5EC 50%,#2F6FA8 50%)}
+.sw-rose i{background:linear-gradient(135deg,#F2A7B8 50%,#B4506A 50%)}
+.sw[aria-pressed=true]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
 </style>
 </head>
 <body>
@@ -698,6 +709,7 @@ function profileHTML(){
      return '<div class="pf"><label for="pf-'+f[0]+'">'+f[1]+'</label><input id="pf-'+f[0]+'"'+(f[0]==='geb'?' type="date" max="'+iso(TODAY)+'"':' placeholder="'+esc(f[2])+'"')+' value="'+esc(p[f[0]])+'"></div>'}).join('')
    +'</div>'+(S.pfEdit?'<div class="btns"><button class="ghost main" data-act="pf-save">Speichern</button><button class="ghost" data-act="pf-cancel">Abbrechen</button></div>':'')
    +(S.sample?'<p class="note">Beispieldaten.</p>':'')
+   +farbeHTML()
    +'<h2 class="h2">Meine Geschichte</h2><div class="card pad"><ol class="story">'
    +'<li><strong>Geburt</strong><span>'+[gebTxt,p.zeit,p.ort].filter(Boolean).map(esc).join(' · ')+'</span>'
    +((p.gew||p.gr||p.kopf)?'<p>'+[p.gew,p.gr,p.kopf?'Kopfumfang '+p.kopf:''].filter(Boolean).map(esc).join(', ')+'</p>':'')+'</li>';
@@ -958,11 +970,11 @@ function drawFrame(ctx,W,H,t,imgs){
     for(var j=tl.length-1;j>=0;j--){ctx.fillText(tl[j],pad,y);y-=30*u}
     setLS(ctx,0);
     if(m.ms){ctx.font='600 '+(12.5*u)+'px '+FB;var lab='★  Meilenstein',w=ctx.measureText(lab).width+22*u,ph=24*u;
-      rrect(ctx,pad,y-ph+4*u,w,ph,ph/2);ctx.fillStyle='#6FD3AE';ctx.fill();ctx.fillStyle='#0F3D2D';ctx.fillText(lab,pad+11*u,y-3.5*u)}
+      rrect(ctx,pad,y-ph+4*u,w,ph,ph/2);ctx.fillStyle=cssVar('--mint','#6FD3AE');ctx.fill();ctx.fillStyle=cssVar('--mint-ink','#0F3D2D');ctx.fillText(lab,pad+11*u,y-3.5*u)}
     ctx.globalAlpha=1;
   }else{
     var it;
-    var eb={font:'600 '+(12*u)+'px '+FB,ls:1.7*u,color:'#A8E8D0',lh:16*u,gap:0,upper:true};
+    var eb={font:'600 '+(12*u)+'px '+FB,ls:1.7*u,color:cssVar('--mint-pale','#A8E8D0'),lh:16*u,gap:0,upper:true};
     var h2={font:'700 '+(58*u)+'px '+FD,ls:-2.3*u,color:'#F4F2FF',lh:55*u,gap:10*u};
     var ld={font:(18.4*u)+'px '+FB,color:'#F4F2FF',lh:26*u,gap:10*u};
     var sb={font:(15*u)+'px '+FB,color:'#B9BAD6',lh:22*u,gap:6*u};
@@ -985,7 +997,7 @@ function drawFrame(ctx,W,H,t,imgs){
     else it=[mk(eb,'Abspann'),mk(h2,S.mem.length+(S.mem.length===1?' Moment':' Momente')),mk(ld,doneCount()+(doneCount()===1?' Meilenstein in ':' Meilensteine in ')+ageText(TODAY))].concat(growthLine()?[mk(sb,growthLine())]:[]).concat([mk(sb,'Jeder Moment zählt.')]);
     if(it)textBlock(ctx,W,H,it,alpha);
   }
-  ctx.fillStyle='#6FD3AE';ctx.fillRect(0,0,W*t/F.total,4*u);
+  ctx.fillStyle=cssVar('--mint','#6FD3AE');ctx.fillRect(0,0,W*t/F.total,4*u);
 }
 function loadImg(src){return new Promise(function(res){var im=new Image();im.onload=function(){res(im)};im.onerror=function(){res(null)};im.src=src})}
 function exportSheet(){
@@ -1442,6 +1454,7 @@ function welcomeHTML(){
    +'<h1>Willkommen</h1><p class="lede">Momentitos sammelt Fotos, Videos, Sprachnachrichten und Meilensteine deines Kindes an einem Ort und macht daraus einen Film.</p>'
    +'<div class="card pad" style="margin-top:22px"><label class="fl" for="w-name" style="margin-top:0">Wie heißt dein Kind?</label><input class="fld" id="w-name" autocomplete="off" placeholder="Vorname">'
    +'<label class="fl" for="w-geb">Geburtstag</label><input class="fld" type="date" id="w-geb" max="'+iso(TODAY)+'">'
+   +'<label class="fl">Junge oder Mädchen? <span class="opt">(für die Farben)</span></label><div id="w-sex">'+sexChips(S.wSex,'w-sex')+'</div>'
    +'<p class="err" id="w-err" hidden></p><button class="primary" data-act="welcome-go">Los geht’s</button></div>'
    +'<p class="note">Alles, was du einträgst, bleibt nur auf diesem Gerät. Nichts wird ins Internet geschickt. Weitere Kinder und alle Angaben kannst du später im Steckbrief ergänzen.</p>'
    +'<div class="btns" style="margin-top:14px"><label class="ghost" for="w-sync" style="cursor:pointer">'+ic('down',16)+'Dein Partner nutzt Momentitos schon? Datei einspielen</label><input class="vh" type="file" id="w-sync" accept=".json,application/json"><button class="ghost" data-act="welcome-sample">Erst mit Beispieldaten ansehen</button></div>';
@@ -1453,9 +1466,16 @@ function tabsHTML(){
     return '<button class="tab" data-act="tab" data-tab="'+t[0]+'"'+(S.tab===t[0]?' aria-current="page"':'')+'><span class="ti">'+ic(t[1],22)+(t[0]==='rit'&&dc?'<i class="badge" aria-label="'+dc+' offen">'+dc+'</i>':'')+'</span><span>'+t[2]+'</span></button>';
   }).join('')+(S.tab==='film'?'':'<button class="fab" data-act="add" aria-label="Neuen Moment hinzufügen">'+ic('plus',26)+'</button>');
 }
+var FARBEN=[['mint','Mint'],['blau','Hellblau'],['rose','Rosé']];
+function farbeOf(p){p=p||S.profile||{};if(p.farbe&&FARBEN.some(function(f){return f[0]===p.farbe}))return p.farbe;return p.sex==='j'?'blau':(p.sex==='m'?'rose':'mint')}
+function applyFarbe(){var f=S.tab==='welcome'?(S.wSex==='j'?'blau':S.wSex==='m'?'rose':'mint'):farbeOf();document.documentElement.setAttribute('data-farbe',f)}
+function cssVar(n,d){var v=getComputedStyle(document.documentElement).getPropertyValue(n).trim();return v||d}
+function sexChips(cur,act){return '<div class="chips" role="group" aria-label="Junge oder Mädchen">'+[['j','Junge'],['m','Mädchen'],['','Keine Angabe']].map(function(x){return '<button class="chip" data-act="'+act+'" data-v="'+x[0]+'" aria-pressed="'+((cur||'')===x[0])+'">'+x[1]+'</button>'}).join('')+'</div>'}
+function farbeHTML(){var cur=farbeOf();return '<h2 class="h2">Farben der App</h2><div class="card pad"><p class="tag" style="margin:0 0 8px">'+esc(first())+' ist</p>'+sexChips(S.profile.sex,'pf-sex')
+  +'<p class="tag" style="margin:14px 0 8px">Farbwelt'+(S.profile.farbe?'':' (passt sich automatisch an)')+'</p><div class="swatches">'+FARBEN.map(function(f){return '<button class="sw sw-'+f[0]+'" data-act="pf-farbe" data-v="'+f[0]+'" aria-pressed="'+(cur===f[0])+'"><i></i>'+f[1]+'</button>'}).join('')+'</div></div>'}
 function render(){
   filmStop();
-  $('tabs').hidden=S.tab==='welcome';
+  $('tabs').hidden=S.tab==='welcome';applyFarbe();
   if(S.tab==='ms')S.tab='ideas';
   var v={ideas:ideasHTML,welcome:welcomeHTML,home:homeHTML,ms:msHTML,rit:ritHTML,profile:profileHTML,film:filmHTML}[S.tab];
   $('view').innerHTML=v();$('tabs').innerHTML=tabsHTML();
@@ -1984,6 +2004,9 @@ document.addEventListener('click',function(e){
   else if(a==='idea-showhid'){S.showHid=!S.showHid;render()}
   else if(a==='ms-moment'){closeSheet();S.add=newAdd('f','',id);openSheet(addHTML())}
   else if(a==='mem-edit'){var me=memById(id);if(!me)return;closeSheet();S.add=editAdd(me);openSheet(addHTML())}
+  else if(a==='w-sex'){S.wSex=b.getAttribute('data-v');$('w-sex').innerHTML=sexChips(S.wSex,'w-sex');applyFarbe()}
+  else if(a==='pf-sex'){S.profile.sex=b.getAttribute('data-v');delete S.profile.farbe;S.profile.upd=Date.now();save();var sy=window.scrollY;render();window.scrollTo(0,sy)}
+  else if(a==='pf-farbe'){var fv=b.getAttribute('data-v');S.profile.farbe=fv;S.profile.upd=Date.now();save();var sy2=window.scrollY;render();window.scrollTo(0,sy2);toast('Farbwelt '+FARBEN.filter(function(f){return f[0]===fv})[0][1])}
   else if(a==='pf-edit'){S.pfEdit=true;render();var pn=$('pf-name');if(pn)pn.focus()}
   else if(a==='pf-cancel'){S.pfEdit=false;render()}
   else if(a==='pf-save'){
@@ -2040,7 +2063,7 @@ document.addEventListener('click',function(e){
     var wn=$('w-name').value.trim(),wg=$('w-geb').value,we=$('w-err');
     if(!wn){we.textContent='Bitte gib einen Namen ein.';we.hidden=false;$('w-name').focus();return}
     if(!parseISO(wg)){we.textContent='Bitte wähle den Geburtstag aus.';we.hidden=false;$('w-geb').focus();return}
-    S.profile.name=wn;S.profile.geb=wg;S.profile.upd=Date.now();setBirth();S.tab='home';save();render();window.scrollTo(0,0);setTimeout(function(){tourOpen(0)},350);
+    S.profile.name=wn;S.profile.geb=wg;if(S.wSex)S.profile.sex=S.wSex;S.profile.upd=Date.now();setBirth();S.tab='home';save();render();window.scrollTo(0,0);setTimeout(function(){tourOpen(0)},350);
   }
   else if(a==='welcome-sample'){resetAll(true);setTimeout(function(){tourOpen(0)},450)}
   else if(a==='backup')backup();
