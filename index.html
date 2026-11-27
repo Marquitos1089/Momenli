@@ -364,6 +364,11 @@ html[data-farbe=rose]{--bg:#FBF0EF;--line:#EEE0E0;--accent:#B4506A;--accent-soft
 .sw-blau i{background:linear-gradient(135deg,#8EC5EC 50%,#2F6FA8 50%)}
 .sw-rose i{background:linear-gradient(135deg,#F2A7B8 50%,#B4506A 50%)}
 .sw[aria-pressed=true]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+/* Datumsfelder: nicht breiter als das Raster (iOS/Android haben sonst eine Mindestbreite) */
+input[type=date]{min-width:0;max-width:100%;box-sizing:border-box;-webkit-appearance:none;appearance:none;display:block}
+input[type=date].fld{width:100%;min-height:50px;line-height:1.3;text-align:left}
+input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
+.pf input[type=date]{width:100%}
 </style>
 </head>
 <body>
@@ -1461,7 +1466,7 @@ function ideasHTML(){
 }
 /* ---------- Kurze Anleitung ---------- */
 var TOUR={i:0,steps:[
- {sel:'.fab',icon:'plus',t:'Neuen Moment festhalten',d:'Mit dem grünen Plus speicherst du Fotos, Videos oder Sprachnachrichten. Das Datum wird aus dem Foto übernommen, du gibst nur noch einen kurzen Titel ein.'},
+ {sel:'.fab',icon:'plus',t:'Neuen Moment festhalten',d:'Mit dem Plus unten speicherst du Fotos, Videos oder Sprachnachrichten. Das Datum wird aus dem Foto übernommen, du gibst nur noch einen kurzen Titel ein.'},
  {tab:'ideas',icon:'award',t:'Ideen und Meilensteine',d:'Über 300 Ideen passend zum Alter. Einträge mit Stern sind Meilensteine wie das erste Lächeln. Antippen, Foto dazu, fertig.'},
  {tab:'rit',icon:'repeat',t:'Rituale, Steckbrief und Film',d:'Unter Rituale findest du Monatsfotos, Briefe und Interviews zum Geburtstag. Im Steckbrief stehen die Geschichte deines Kindes, Größe und Gewicht und die Sicherung. Aus allem entsteht automatisch ein Film.'}
 ]};
