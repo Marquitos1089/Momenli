@@ -806,8 +806,34 @@ function buildTL(){
   sc.push({k:'tlend',d:3200});
   var t=0;sc.forEach(function(x){x.t0=t;t+=x.d});return {sc:sc,total:t,mode:'tl'};
 }
+/* Jahresfilm: Lebensjahr n geht von Geburt bzw. dem (n-1). Geburtstag (exklusiv) bis einschließlich n. Geburtstag */
+function yearRange(n){return [n===1?BIRTH:bday(n-1),bday(n)]}
+function inYear(d,n){var r=yearRange(n);return (n===1?d>=r[0]:d>r[0])&&d<=r[1]}
+function yearName(n){return n===1?'Das erste Lebensjahr':(n===2?'Das zweite Lebensjahr':(n===3?'Das dritte Lebensjahr':'Das '+n+'. Lebensjahr'))}
+function yearsList(){var cur=ageYears(TODAY)+1,a=[];for(var n=1;n<=cur&&n<=18;n++){var c=S.mem.filter(function(m){return inYear(m.date,n)}).length;a.push({n:n,c:c,run:n===cur})}return a}
+function seasonYear(d){var y=d.getFullYear(),m=d.getMonth();if(m===11)return y+'/'+String(y+1).slice(2);if(m<2)return (y-1)+'/'+String(y).slice(2);return String(y)}
+function season(d){var m=d.getMonth();return m<2||m===11?'Winter':(m<5?'Frühling':(m<8?'Sommer':'Herbst'))}
+function buildYear(n){
+  var rg=yearRange(n),list=S.mem.filter(function(m){return inYear(m.date,n)}).concat(ritFilmItems().filter(function(x){return x.y===n})).sort(function(a,b){return a.date-b.date||(a.kind?1:0)-(b.kind?1:0)||(a.kind?a.id-b.id:okey(a)-okey(b))});
+  var nm=list.filter(function(m){return !m.kind}).length,run=TODAY<rg[1];
+  var sc=[{k:'txt',d:3400,eb:'Jahresfilm',h2:first(),lead:yearName(n),sub:fmtDate(rg[0])+' bis '+fmtDate(run?TODAY:rg[1])}];
+  var grp=null;
+  list.forEach(function(m){
+    var key=m.kind?(grp?grp.key:''):season(m.date)+' '+seasonYear(m.date);
+    if(!grp||grp.key!==key){grp={key:key,items:[]};grp.ch={k:'chapter',d:1800,name:season(m.date),range:seasonYear(m.date),n:0};sc.push(grp.ch)}
+    if(!m.kind)grp.ch.n++;
+    if(m.kind==='letter')sc.push({k:'letter',d:3200+Math.min((m.L.text||'').length,260)*16,y:m.y,L:m.L});
+    else if(m.kind==='iv')sc.push({k:'iv',d:6500,y:m.y,pairs:ivPairs(m.I,4,m.y)});
+    else{sc.push({k:'mem',d:m.ms?2400:1700,m:m});
+      var fps=picsOf(m);for(var fj=1;fj<Math.min(fps.length,5);fj++){var pm=Object.create(m);pm.img=fps[fj].img;pm.id=fps[fj].pid;pm.ms='';sc.push({k:'mem',d:1300,m:pm})}}
+  });
+  var nms=S.mem.filter(function(m){return m.ms&&inYear(m.date,n)}).length;
+  sc.push({k:'txt',d:4200,eb:'Abspann',h2:nm+(nm===1?' Moment':' Momente'),lead:(nms?nms+(nms===1?' Meilenstein':' Meilensteine')+' · ':'')+(run?'bis heute':'im '+(n===1?'ersten':n===2?'zweiten':n===3?'dritten':n+'.')+' Lebensjahr'),sub:'Jeder Moment zählt.'});
+  var t=0;sc.forEach(function(x){x.t0=t;t+=x.d});return {sc:sc,total:t,mode:'jahr',year:n};
+}
 function buildFilm(){
   if(S.filmMode==='tl')return buildTL();
+  if(S.filmMode==='jahr'){var my=ageYears(TODAY)+1;if(!S.filmYear||S.filmYear>my)S.filmYear=my;return buildYear(S.filmYear)}
   var list=S.mem.concat(ritFilmItems()).sort(function(a,b){return a.date-b.date||(a.kind?1:0)-(b.kind?1:0)||(a.kind?a.id-b.id:okey(a)-okey(b))});
   var mp=monthPhotos(),montaged=false;
   function montage(){if(montaged||mp.length<3)return;montaged=true;sc.push({k:'montage',d:1600+mp.length*450,items:mp})}
@@ -835,6 +861,7 @@ function buildFilm(){
 function filmLead(){var mo=ageMonths(TODAY);return mo<1?'Die ersten Tage':(mo===1?'Der erste Monat':'Die ersten '+mo+' Monate')}
 function sceneHTML(s){
   var dur=(s.d/F.speed/1000).toFixed(2);
+  if(s.k==='txt')return '<div class="sc"><p class="eyebrow">'+esc(s.eb)+'</p><h2>'+esc(s.h2)+'</h2>'+(s.lead?'<p class="lead">'+esc(s.lead)+'</p>':'')+(s.sub?'<p class="sub">'+esc(s.sub)+'</p>':'')+'</div>';
   if(s.k==='tltitle')return '<div class="sc"><p class="eyebrow">Aufwachsen im Zeitraffer</p><h2>'+esc(first())+'</h2><p class="lead">'+s.n+' Monatsfotos</p><p class="sub">'+fmtDate(BIRTH)+' bis '+fmtDate(TODAY)+'</p></div>';
   if(s.k==='tlend')return '<div class="sc"><p class="eyebrow">Abspann</p><h2>'+ageText(TODAY)+'</h2>'+(growthLine()?'<p class="lead">'+growthLine()+'</p>':'')+'<p class="sub">Jeder Moment zählt.</p></div>';
   if(s.k==='tl')return '<div class="sc sc-mem" style="animation:none">'+cover(s.m,'')+'<div class="cap"><h3>'+(s.n===0?'Geburt':ageLabelM(s.n))+'</h3><p>'+fmtShort(s.m.date)+'</p></div></div>';
@@ -856,12 +883,13 @@ function musicChips(){
 function filmHTML(){
   var sp=F?F.speed:1;
   F=buildFilm();F.t=0;F.idx=-1;F.playing=false;F.speed=sp;F.last=0;F.raf=0;
-  var tl=S.filmMode==='tl',np=tl?tlPhotos().length:0;
+  var tl=S.filmMode==='tl',jr=S.filmMode==='jahr',np=tl?tlPhotos().length:0,YL=yearsList(),YC=jr?YL.filter(function(y){return y.n===(S.filmYear||1)})[0]:null;
   var chap=F.sc.filter(function(s){return s.k==='chapter'}).map(function(s){return '<button class="chip" data-act="film-seek" data-t="'+s.t0+'" aria-pressed="false">'+s.name+'</button>'}).join('');
   return topHTML()
    +'<h1>Momentitos Film</h1>'
-   +'<div class="chips" style="margin-top:12px"><button class="chip" data-act="film-mode" data-v="leben" aria-pressed="'+!tl+'">Lebensfilm</button><button class="chip" data-act="film-mode" data-v="tl" aria-pressed="'+tl+'">Aufwachsen im Zeitraffer</button></div>'
-   +'<p class="lede">'+(tl?(np<2?'Hier läuft später jedes Monatsfoto kurz hintereinander, so sieht man '+esc(first())+' wachsen. Dafür braucht es mindestens zwei Monatsfotos.':'Alle '+np+' Monatsfotos hintereinander, so sieht man '+esc(first())+' wachsen.'):'Aus '+(S.mem.length===1?'einem Moment':S.mem.length+' Momenten')+' automatisch zusammengestellt.')+'</p>'
+   +'<div class="chips" style="margin-top:12px"><button class="chip" data-act="film-mode" data-v="leben" aria-pressed="'+(!tl&&!jr)+'">Lebensfilm</button><button class="chip" data-act="film-mode" data-v="jahr" aria-pressed="'+jr+'">Jahresfilm</button><button class="chip" data-act="film-mode" data-v="tl" aria-pressed="'+tl+'">Zeitraffer</button></div>'
+   +(jr?'<div class="chips" id="fyears" style="margin-top:8px">'+YL.map(function(y){return '<button class="chip" data-act="film-year" data-v="'+y.n+'" aria-pressed="'+(y.n===(S.filmYear||1))+'">'+y.n+'. Lebensjahr<span style="opacity:.6;margin-left:6px">'+y.c+'</span></button>'}).join('')+'</div>':'')
+   +'<p class="lede">'+(jr?(YC&&YC.c?yearName(YC.n)+(YC.run?', läuft noch':'')+': die schönsten Momente von '+fmtShort(yearRange(YC.n)[0])+' bis '+(YC.run?'heute':fmtShort(yearRange(YC.n)[1]))+'.':'In diesem Lebensjahr gibt es noch keine Momente.'):tl?(np<2?'Hier läuft später jedes Monatsfoto kurz hintereinander, so sieht man '+esc(first())+' wachsen. Dafür braucht es mindestens zwei Monatsfotos.':'Alle '+np+' Monatsfotos hintereinander, so sieht man '+esc(first())+' wachsen.'):'Aus '+(S.mem.length===1?'einem Moment':S.mem.length+' Momenten')+' automatisch zusammengestellt.')+'</p>'
    +'<div class="stage" id="stage" data-state="idle"><div class="fp" id="fp"></div><div id="scene"></div>'
    +'<button class="bigplay" id="bigplay" data-act="film-toggle"><span>'+ic('play',30)+'</span><b id="bigtxt">Film starten</b></button></div>'
    +'<div class="ctrl"><button class="pbtn" id="fbtn" data-act="film-toggle" aria-label="Abspielen">'+ic('play',24)+'</button>'
@@ -980,7 +1008,8 @@ function drawFrame(ctx,W,H,t,imgs){
     var ld={font:(18.4*u)+'px '+FB,color:'#F4F2FF',lh:26*u,gap:10*u};
     var sb={font:(15*u)+'px '+FB,color:'#B9BAD6',lh:22*u,gap:6*u};
     function mk(o,txt){var c={};for(var q in o)c[q]=o[q];c.text=txt;return c}
-    if(s.k==='tltitle')it=[mk(eb,'Aufwachsen im Zeitraffer'),mk(h2,first()),mk(ld,s.n+' Monatsfotos'),mk(sb,fmtDate(BIRTH)+' bis '+fmtDate(TODAY))];
+    if(s.k==='txt')it=[mk(eb,s.eb),mk(h2,s.h2)].concat(s.lead?[mk(ld,s.lead)]:[]).concat(s.sub?[mk(sb,s.sub)]:[]);
+    else if(s.k==='tltitle')it=[mk(eb,'Aufwachsen im Zeitraffer'),mk(h2,first()),mk(ld,s.n+' Monatsfotos'),mk(sb,fmtDate(BIRTH)+' bis '+fmtDate(TODAY))];
     else if(s.k==='tlend')it=[mk(eb,'Abspann'),mk(h2,ageText(TODAY))].concat(growthLine()?[mk(ld,growthLine())]:[]).concat([mk(sb,'Jeder Moment zählt.')]);
     else if(s.k==='title')it=[mk(eb,'Momentitos Film'),mk(h2,first()),mk(ld,filmLead()),mk(sb,fmtDate(BIRTH)+' bis '+fmtDate(TODAY))];
     else if(s.k==='chapter')it=[mk(eb,s.range),mk(h2,s.name),mk(sb,s.n+' '+(s.n===1?'Moment':'Momente'))];
@@ -1029,7 +1058,7 @@ async function exportFilm(){
     stream.getTracks().forEach(function(tr){if(tr.kind==='video')tr.stop()});
     if(!X||X.cancel){X=null;return}
     var type=(rec.mimeType||mime||'video/webm').split(';')[0],ext=type.indexOf('mp4')>=0?'mp4':'webm';
-    var blob=new Blob(chunks,{type:type}),name=(F.mode==='tl'?'Momentitos_Zeitraffer_':'Momentitos_Film_')+first().replace(/[^\wäöüÄÖÜß-]+/g,'_')+'_'+iso(TODAY)+'.'+ext;
+    var blob=new Blob(chunks,{type:type}),name=(F.mode==='tl'?'Momentitos_Zeitraffer_':(F.mode==='jahr'?'Momentitos_Jahresfilm_'+F.year+'_':'Momentitos_Film_'))+first().replace(/[^\wäöüÄÖÜß-]+/g,'_')+'_'+iso(TODAY)+'.'+ext;
     download(blob,name);X=null;
     $('xmsg').innerHTML='Fertig. Die Datei <b>'+esc(name)+'</b> ('+(blob.size/1048576).toLocaleString('de-DE',{maximumFractionDigits:1})+' MB) liegt in deinem Download-Ordner.'+(ext==='webm'?' WebM-Dateien spielen Chrome, Edge, Firefox und VLC ab.':'');
     $('xprog').value=100;$('xpct').textContent='100 %';
@@ -1981,7 +2010,8 @@ document.addEventListener('click',function(e){
   else if(a==='cam-shot')camShot();
   else if(a==='cam-cancel'){camStop();refreshCap()}
   else if(a==='film-tl'){S.filmMode='tl';setTab('film')}
-  else if(a==='film-mode'){S.filmMode=b.getAttribute('data-v');render()}
+  else if(a==='film-mode'){S.filmMode=b.getAttribute('data-v');if(S.filmMode==='jahr'&&!S.filmYear){var yl=yearsList(),last=yl.filter(function(y){return y.c&&!y.run}).pop();S.filmYear=last?last.n:yl[yl.length-1].n}render()}
+  else if(a==='film-year'){S.filmYear=+b.getAttribute('data-v');render()}
   else if(a==='add-type'){recStop(true);camStop();S.add=newAdd(b.getAttribute('data-type'));var sg=document.querySelectorAll('.segb');for(var i=0;i<sg.length;i++)sg[i].setAttribute('aria-pressed',sg[i]===b);refreshCap()}
   else if(a==='rec')recToggle(b.getAttribute('data-for'));
   else if(a==='rit-photo'){var tg=b.getAttribute('data-v');closeSheet();S.add=newAdd('f',tg);openSheet(addHTML())}
