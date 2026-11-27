@@ -354,8 +354,9 @@ details.more .fld{background:#fff}
 .primary[disabled]{opacity:.45;cursor:not-allowed;box-shadow:none}
 
 /* Farbwelten je Kind */
-html[data-farbe=blau]{--accent:#2F6FA8;--accent-soft:#DCEBF8;--mint:#8EC5EC;--mint-ink:#0E2F4A;--mint-soft:#DCEBF8;--mint-text:#235A8A;--mint-line:#5AA6DA;--mint-pale:#BFE0F5;--ok:#3F7FB5}
-html[data-farbe=rose]{--accent:#B4506A;--accent-soft:#F8DDE3;--mint:#F2A7B8;--mint-ink:#4A1525;--mint-soft:#F8DDE3;--mint-text:#9A3F56;--mint-line:#E07F98;--mint-pale:#F7C9D4;--ok:#B4506A}
+html[data-farbe=mint]{--bg:#F2F7F1;--line:#E0E8E1}
+html[data-farbe=blau]{--bg:#EFF4F9;--line:#DEE6EE;--accent:#2F6FA8;--accent-soft:#DCEBF8;--mint:#8EC5EC;--mint-ink:#0E2F4A;--mint-soft:#DCEBF8;--mint-text:#235A8A;--mint-line:#5AA6DA;--mint-pale:#BFE0F5;--ok:#3F7FB5}
+html[data-farbe=rose]{--bg:#FBF0EF;--line:#EEE0E0;--accent:#B4506A;--accent-soft:#F8DDE3;--mint:#F2A7B8;--mint-ink:#4A1525;--mint-soft:#F8DDE3;--mint-text:#9A3F56;--mint-line:#E07F98;--mint-pale:#F7C9D4;--ok:#B4506A}
 .swatches{display:flex;gap:8px;flex-wrap:wrap}
 .sw{display:flex;align-items:center;gap:8px;padding:8px 14px 8px 8px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);font:600 .9rem var(--font-body);color:var(--ink);cursor:pointer}
 .sw i{width:24px;height:24px;border-radius:50%;display:block}
@@ -1468,7 +1469,7 @@ function tabsHTML(){
 }
 var FARBEN=[['mint','Mint'],['blau','Hellblau'],['rose','Rosé']];
 function farbeOf(p){p=p||S.profile||{};if(p.farbe&&FARBEN.some(function(f){return f[0]===p.farbe}))return p.farbe;return p.sex==='j'?'blau':(p.sex==='m'?'rose':'mint')}
-function applyFarbe(){var f=S.tab==='welcome'?(S.wSex==='j'?'blau':S.wSex==='m'?'rose':'mint'):farbeOf();document.documentElement.setAttribute('data-farbe',f)}
+function applyFarbe(){var f=S.tab==='welcome'?(S.wSex==='j'?'blau':S.wSex==='m'?'rose':'mint'):farbeOf();document.documentElement.setAttribute('data-farbe',f);var tm=document.querySelector('meta[name=theme-color]');if(tm)tm.setAttribute('content',{mint:'#F2F7F1',blau:'#EFF4F9',rose:'#FBF0EF'}[f])}
 function cssVar(n,d){var v=getComputedStyle(document.documentElement).getPropertyValue(n).trim();return v||d}
 function sexChips(cur,act){return '<div class="chips" role="group" aria-label="Junge oder Mädchen">'+[['j','Junge'],['m','Mädchen'],['','Keine Angabe']].map(function(x){return '<button class="chip" data-act="'+act+'" data-v="'+x[0]+'" aria-pressed="'+((cur||'')===x[0])+'">'+x[1]+'</button>'}).join('')+'</div>'}
 function farbeHTML(){var cur=farbeOf();return '<h2 class="h2">Farben der App</h2><div class="card pad"><p class="tag" style="margin:0 0 8px">'+esc(first())+' ist</p>'+sexChips(S.profile.sex,'pf-sex')
