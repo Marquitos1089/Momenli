@@ -374,6 +374,25 @@ input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
 .isearch input{flex:1;min-width:0;border:0;background:none;padding:13px 0;font:inherit;font-size:16px;color:var(--ink);outline:none;-webkit-appearance:none;appearance:none}
 .isearch input::-webkit-search-cancel-button{display:none}
 .isearch .icon-btn{width:34px;height:34px}
+/* Zähne */
+.tcard{display:block;width:100%;text-align:left;border:0;cursor:pointer;font:inherit;color:inherit}
+.tc-h{display:flex;align-items:center;gap:10px}.tc-h b{flex:1;font-size:1.02rem}.tc-h .tag{margin:0}
+.tc-h .mk{width:34px;height:34px;border-radius:11px;background:var(--accent-soft);color:var(--accent)}
+.tc-b{display:grid;grid-template-columns:104px 1fr;gap:14px;align-items:center;margin-top:10px}
+svg.teeth{width:100%;height:auto;display:block}
+.tbox{max-width:330px;margin:4px auto 0}
+svg.teeth.big .tooth{cursor:pointer;outline:none}
+svg.teeth.big .tooth:focus-visible rect:last-child{stroke:var(--ink);stroke-width:3}
+.tlab{font:600 12px var(--font-body);fill:var(--muted)}.tlab.sm{font-size:11px;font-weight:500}
+.trow{display:flex;align-items:center;gap:10px;margin:0 0 8px}.trow:last-child{margin-bottom:0}
+.trow i{width:12px;height:12px;border-radius:50%;flex:none}
+.trow span{display:flex;flex-direction:column;line-height:1.25}.trow b{font-weight:600;font-size:.92rem}.trow small{color:var(--muted);font-size:.82rem}
+button.trow.tl{width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:12px 16px;margin:0;text-align:left;font:inherit;color:inherit;cursor:pointer}
+button.trow.tl:last-child{border-bottom:0}
+.tleg{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;margin:6px 0 12px;font-size:.82rem;color:var(--muted)}
+.tleg span{display:inline-flex;align-items:center;gap:6px}.tleg i{width:10px;height:10px;border-radius:50%}
+.tedit{margin-top:4px;border:1.5px solid var(--accent)}
+button.trow.tl{justify-content:flex-start}button.trow.tl span{text-align:left;align-items:flex-start}
 </style>
 </head>
 <body>
@@ -415,6 +434,7 @@ var P={
  repeat:'<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
  swap:'<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
  phone:'<rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>',
+ tooth:'<path d="M7 3c-2.2 0-4 1.8-4 4.3 0 2.2 1 3.6 1.6 5.6.5 1.7.6 3.6 1 5.4.3 1.6.9 2.7 1.9 2.7 1.3 0 1.5-1.8 1.8-3.4.3-1.4.7-2.6 1.7-2.6s1.4 1.2 1.7 2.6c.3 1.6.5 3.4 1.8 3.4 1 0 1.6-1.1 1.9-2.7.4-1.8.5-3.7 1-5.4.6-2 1.6-3.4 1.6-5.6C21 4.8 19.2 3 17 3c-1.9 0-3 1-5 1S8.9 3 7 3z"/>',
  search:'<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>'
 };
 function ic(n,s){s=s||20;return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+P[n]+'</svg>'}
@@ -584,7 +604,7 @@ function snapshot(){
 function applySnap(o){
   S.nextId=o.nextId||100;S.music=o.music||'spieluhr';S.musicName=o.musicName||'';
   var kids=o.kids||[{kid:'k1',profile:o.profile,ms:o.ms,mem:o.mem,sample:o.sample}];/* alte Sicherungen mit einem Kind */
-  S.kids=kids.map(function(k){var rt=k.rit||emptyRit();['letters','interviews'].forEach(function(x){rt[x]=rt[x]||{}});rt.measures=rt.measures||[];rt.qs=rt.qs||[];
+  S.kids=kids.map(function(k){var rt=k.rit||emptyRit();['letters','interviews','teeth'].forEach(function(x){rt[x]=rt[x]||{}});rt.measures=rt.measures||[];rt.qs=rt.qs||[];
     return {kid:k.kid,profile:k.profile||{},ms:k.ms||[],sample:!!k.sample,rit:rt,del:k.del||{},
     mem:(k.mem||[]).map(function(m){m.date=parseISO(m.date)||TODAY;return fillPics(m)})}});
   S.cur='';S.profile=null;
@@ -1119,7 +1139,7 @@ var QS=[
 ['gluecklich','Was macht dich richtig glücklich?','',99,99]
 ];
 function qText(q,Y){var t=(Y&&Y<3&&q[2])?q[2]:(q[1]||q[2]);return t.replace(/\{n\}/g,first())}
-function emptyRit(){return {letters:{},interviews:{},measures:[],qs:[]}}
+function emptyRit(){return {letters:{},interviews:{},teeth:{},measures:[],qs:[]}}
 function R(){var k=curKid();if(!k.rit)k.rit=emptyRit();return k.rit}
 function allQs(Y){
   var own=R().qs.map(function(q){return [q.id,q.q,'',1,99]});
@@ -1148,7 +1168,7 @@ function num(v){v=String(v||'').replace(',','.').replace(/[^\d.]/g,'');var n=par
 function fmtNum(n,d){return n==null?'':n.toLocaleString('de-DE',{maximumFractionDigits:d==null?1:d})}
 function maxYear(){return Math.max(1,ageYears(TODAY)+1)}
 function sampleRit(){
-  return {qs:[],
+  return {qs:[],teeth:{'u-l-1':{date:'2025-10-04'},'u-r-1':{date:'2025-10-19'},'o-r-1':{date:'2025-12-02'},'o-l-1':{date:'2025-12-10'},'o-l-2':{date:'2026-02-14'},'o-r-2':{date:'2026-03-01'},'u-l-2':{date:'2026-04-20'},'u-r-2':{date:'2026-05-06'},'o-l-4':{date:'2026-07-11'},'u-r-4':{date:'2026-08-23'}},
     letters:{1:{text:'Liebe Emma, heute bist du ein Jahr alt. Vor einem Jahr haben wir dich zum ersten Mal gehalten und seitdem jeden Tag etwas Neues an dir entdeckt. Du lachst, wenn der Wind dir ins Gesicht weht, und du schläfst am besten auf Papas Bauch. Wir sind so stolz auf dich. Alles Liebe zum ersten Geburtstag.',from:'Mama und Papa',written:'2026-01-14'}},
     interviews:{1:{written:'2026-01-15',answers:{essen:'Banane, am liebsten zermatscht',spiel:'Die Rassel mit den Glöckchen',lied:'Alle meine Entchen, dabei wippt sie mit',lachen:'Wenn Papa sie in die Luft wirft',menschen:'Mama, Papa und Opa Peter',neu:'Krabbeln, Sitzen und „Mama“ sagen',woerter:'Mama, ba-ba und da',schlafen:'Auf Papas Bauch mit der Spieluhr',kuschel:'Der Stoffhase',nein:'Den Staubsauger'}}},
     measures:[['2025-01-15',52,3.45,34],['2025-02-17',55.5,4.4,37],['2025-04-16',61,5.9,40],['2025-07-16',67,7.4,43],['2025-10-15',71,8.4,44.5],['2026-01-16',75,9.3,45.5],['2026-04-17',79,10.1,46.5],['2026-07-15',82,10.8,47],['2026-11-17',86,11.6,47.5]]
@@ -1205,10 +1225,49 @@ function chartHTML(ms,k){
    +'<polyline fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" points="'+pts.map(function(p){return X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)}).join(' ')+'"/>'
    +pts.map(function(p){return '<circle cx="'+X(p[0]).toFixed(1)+'" cy="'+Y(p[1]).toFixed(1)+'" r="3.2" fill="var(--accent)"/>'}).join('')+'</svg>';
 }
+/* ---------- Zähne: 20 Milchzähne. id = o|u - r|l - 1..5 (1 mittlerer Schneidezahn … 5 zweiter Backenzahn). rechts/links aus Sicht des Kindes. ---------- */
+var TT=[['','',''],['Mittlerer Schneidezahn','#F28B82','ca. 6–12 Monate'],['Seitlicher Schneidezahn','#F5B963','ca. 9–16 Monate'],['Eckzahn','#7CCFA8','ca. 16–23 Monate'],['Erster Backenzahn','#86BFEA','ca. 13–19 Monate'],['Zweiter Backenzahn','#B6A4EE','ca. 23–33 Monate']];
+var TSZ=[0,[22,17],[20,16],[20,19],[28,24],[31,27]],TANG=[0,9,26,44,64,86];
+function teethIds(){var a=[];['o','u'].forEach(function(j){['r','l'].forEach(function(sd){for(var n=1;n<=5;n++)a.push(j+'-'+sd+'-'+n)})});return a}
+function toothName(id){var p=id.split('-');return TT[+p[2]][0]+', '+(p[0]==='o'?'oben':'unten')+' '+(p[1]==='r'?'rechts':'links')}
+function teethOf(){var t=R().teeth||{},a=[];for(var id in t)if(t[id]&&t[id].date&&parseISO(t[id].date))a.push({id:id,date:parseISO(t[id].date)});return a.sort(function(x,y){return x.date-y.date})}
+function teethSVG(big){
+  var t=R().teeth||{},sel=S.tooth,out='';
+  teethIds().forEach(function(id){
+    var p=id.split('-'),n=+p[2],up=p[0]==='o',ang=TANG[n]*(p[1]==='r'?-1:1),rad=ang*Math.PI/180;
+    var x=150+104*Math.sin(rad),y=up?(158-118*Math.cos(rad)):(182+118*Math.cos(rad)),w=TSZ[n][0],h=TSZ[n][1],rot=up?ang:-ang,has=t[id]&&t[id].date,c=TT[n][1];
+    out+='<g'+(big?' class="tooth" data-act="tooth" data-v="'+id+'" role="button" tabindex="0" aria-label="'+esc(toothName(id))+(has?', da seit '+fmtShort(parseISO(t[id].date)):', noch nicht da')+'"':'')+' transform="translate('+x.toFixed(1)+' '+y.toFixed(1)+') rotate('+rot.toFixed(1)+')">'
+      +(big?'<rect x="'+(-w/2-6)+'" y="'+(-h/2-6)+'" width="'+(w+12)+'" height="'+(h+12)+'" fill="transparent"/>':'')
+      +'<rect x="'+(-w/2)+'" y="'+(-h/2)+'" width="'+w+'" height="'+h+'" rx="'+(n<4?w*0.45:9)+'" fill="'+(has?c:'#fff')+'" stroke="'+(sel===id?'var(--ink)':c)+'" stroke-width="'+(sel===id?3:2)+'"'+(has?'':' stroke-opacity=".75"')+'/></g>';
+  });
+  return '<svg class="teeth'+(big?' big':'')+'" viewBox="0 0 300 340" aria-hidden="'+(big?'false':'true')+'">'
+   +(big?'<text x="150" y="150" text-anchor="middle" class="tlab">Oberkiefer</text><text x="150" y="200" text-anchor="middle" class="tlab">Unterkiefer</text><text x="10" y="174" class="tlab sm">rechts</text><text x="290" y="174" text-anchor="end" class="tlab sm">links</text>':'')
+   +out+'</svg>';
+}
+function teethCardHTML(){
+  var l=teethOf(),last=l.slice(-3).reverse();
+  return '<button class="card pad tcard" data-act="teeth-open"><div class="tc-h"><span class="mk">'+ic('tooth',18)+'</span><b>Zähne</b><span class="tag">'+l.length+' von 20</span></div>'
+   +'<div class="tc-b">'+teethSVG(false)+'<div>'+(last.length?last.map(function(x){var n=+x.id.split('-')[2];return '<p class="trow"><i style="background:'+TT[n][1]+'"></i><span><b>'+esc(TT[n][0])+'</b><small>'+(x.id[0]==='o'?'oben ':'unten ')+(x.id[2]==='r'?'rechts':'links')+' · '+ageText(x.date)+'</small></span></p>'}).join('')
+     :'<p class="tag" style="margin:0">Noch kein Zahn eingetragen. Tippe hier, sobald der erste Zahn durchkommt.</p>')+'</div></div></button>';
+}
+function teethHTML(){
+  var t=R().teeth||{},l=teethOf().reverse(),sel=S.tooth,ed='';
+  if(sel){var cur=t[sel]&&t[sel].date?t[sel].date:'';
+    ed='<div class="card pad tedit"><p style="margin:0 0 2px"><strong>'+esc(toothName(sel))+'</strong></p><p class="tag" style="margin:0">'+(cur?'Da seit '+fmtDate(parseISO(cur))+' · mit '+ageText(parseISO(cur)):'Kommt meist '+TT[+sel.split('-')[2]][2]+'.')+'</p>'
+     +'<label class="fl" for="tooth-date">'+(cur?'Datum ändern':'Wann ist er durchgekommen?')+'</label><input class="fld" type="date" id="tooth-date" value="'+(cur||iso(TODAY))+'" max="'+iso(TODAY)+'" min="'+iso(BIRTH)+'">'
+     +'<div class="btns"><button class="ghost main" data-act="tooth-save">'+(cur?'Speichern':'Zahn ist da')+'</button>'+(cur?'<button class="ghost" data-act="tooth-photo">'+ic('camera',16)+'Foto dazu</button><button class="ghost warn" data-act="tooth-del">Entfernen</button>':'<button class="ghost" data-act="tooth-x">Abbrechen</button>')+'</div></div>';}
+  return '<div class="grab"></div><div class="sh-head"><h2>Zähne</h2><button class="icon-btn" data-act="close" aria-label="Schließen">'+ic('x',18)+'</button></div>'
+   +'<p class="tag" style="margin:0 0 4px">Tippe auf einen Zahn, sobald er durchkommt. '+(l.length?l.length+' von 20 Milchzähnen sind da.':'Die Reihenfolge ist bei jedem Kind anders.')+'</p>'
+   +'<div class="tbox">'+teethSVG(true)+'</div>'
+   +'<div class="tleg">'+TT.slice(1).map(function(x){return '<span><i style="background:'+x[1]+'"></i>'+x[0]+'</span>'}).join('')+'</div>'
+   +ed
+   +(l.length?'<p class="label" style="margin-top:16px">Bisher da</p><div class="card">'+l.map(function(x){var n=+x.id.split('-')[2];return '<button class="trow tl" data-act="tooth" data-v="'+x.id+'"><i style="background:'+TT[n][1]+'"></i><span><b>'+esc(toothName(x.id))+'</b><small>'+fmtShort(x.date)+' · mit '+ageText(x.date)+'</small></span></button>'}).join('')+'</div>':'');
+}
+function teethRefresh(){var sh=$('sheet'),sc=sh.scrollTop;sh.innerHTML=teethHTML();sh.scrollTop=sc}
 function growthHTML(){
   var r=R(),out='';
   var ms=r.measures.slice().sort(function(a,b){return a.date<b.date?-1:1});
-  out+='<h2 class="h2">Größe und Gewicht</h2>';
+  out+='<h2 class="h2">Entwicklung</h2>'+teethCardHTML()+'<div class="gh" style="margin:22px 0 10px">Größe und Gewicht</div>';
   if(ms.length){
     var lt=ms[ms.length-1];
     out+='<div class="card pad"><p style="margin:0"><strong>'+fmtNum(lt.cm)+' cm</strong>'+(lt.kg!=null?' · '+fmtNum(lt.kg,2)+' kg':'')+'<span class="tag"> am '+fmtShort(parseISO(lt.date))+'</span></p>'+growthChips(ms)+chartHTML(ms,growthKey(ms))
@@ -1386,15 +1445,15 @@ var IDEAS=[
 ['m4','4 bis 6 Monate',4,6,[
 'v|Lautes Lachen','v|Du drehst dich zum ersten Mal','f|Greifen nach den Zehen','f|Der erste Brei, mit allem im Gesicht','v|Dein Gesicht beim ersten Löffel','f|Sitzen mit Stütze','f|Erster Zahn in Sicht','f|Spielen mit der Rassel','v|Brabbeln im Gespräch mit uns','f|Erster Urlaub oder Ausflug über Nacht','f|Im Spiegel entdeckst du dich selbst','f|Planschen in der Wanne','f|Ausflug in den Zoo oder Tierpark','s|Deine Laute, kurz aufgenommen','f|Babyschwimmen','f|Erster Besuch im Café','f|Spielen mit dem Papier vom Geschenk','v|Du erkennst Mama oder Papa an der Tür','f|Lieblingsoutfit gerade','f|Händchen in Sand oder Gras']],
 ['m7','7 bis 9 Monate',7,9,[
-'f|Sitzen ganz allein','v|Erstes Robben oder Krabbeln','f|Fingerfood zum ersten Mal','v|Winke-winke','f|Erster Zahn','v|Klatschen','f|Mit dem Lieblingsbuch','f|Ausräumen der Küchenschublade','f|Erster Schnee oder erster Strand','v|Ziehen am Sofa zum Stehen','s|Dein „Mama“, „Papa“ oder „Dada“','f|Im Hochstuhl am Familientisch','f|Ganz nah mit dem Haustier','v|Guck-guck-Spiel','f|Dein erstes Paar Schuhe','f|Erster Kinderwagen-Spaziergang mit Blick nach vorne','f|Spielplatz-Schaukel','f|Bei den Großeltern übernachtet','v|Tanzen im Sitzen zu Musik','f|Einschlafen mitten im Spiel']],
+'f|Sitzen ganz allein','v|Erstes Robben oder Krabbeln','f|Fingerfood zum ersten Mal','v|Winke-winke','f|Erster Zahn','v|Klatschen','f|Mit dem Lieblingsbuch','f|Ausräumen der Küchenschublade','f|Erster Schnee oder erster Strand','v|Ziehen am Sofa zum Stehen','s|Dein „Mama“, „Papa“ oder „Dada“','f|Im Hochstuhl am Familientisch','f|Ganz nah mit dem Haustier','v|Guck-guck-Spiel','f|Dein erstes Paar Schuhe','f|Erster Kinderwagen-Spaziergang mit Blick nach vorne','f|Spielplatz-Schaukel','f|Bei den Großeltern übernachtet','v|Tanzen im Sitzen zu Musik','f|Einschlafen mitten im Spiel','f|Der zweite Zahn ist da','f|Zahnlächeln in Großaufnahme']],
 ['m10','10 bis 12 Monate',10,12,[
-'v|Erste Schritte an der Hand','v|Ganz allein ein paar Schritte','s|Dein erstes Wort','f|Zeigen auf Dinge','f|Der Geburtstagskuchen','v|Kerze auspusten (oder es versuchen)','f|Geschenke auspacken','f|Familienfoto am ersten Geburtstag','f|Dein Lieblingsspielzeug zum ersten Geburtstag','f|Erster Haarschnitt','f|Eine Locke vom ersten Haarschnitt','s|Was wir über dein erstes Jahr erzählen','f|Gemeinsames Frühstück','v|Ball hin- und herrollen','f|Im Laub, Schnee oder Sand','f|Mit Freunden in deinem Alter','f|Erster Tag bei der Tagesmutter oder in der Krippe','v|Du räumst etwas ein und wieder aus','f|Du trinkst aus dem Becher','f|Der Blick aus dem Fenster']],
+'v|Erste Schritte an der Hand','v|Ganz allein ein paar Schritte','s|Dein erstes Wort','f|Zeigen auf Dinge','f|Der Geburtstagskuchen','v|Kerze auspusten (oder es versuchen)','f|Geschenke auspacken','f|Familienfoto am ersten Geburtstag','f|Dein Lieblingsspielzeug zum ersten Geburtstag','f|Erster Haarschnitt','f|Eine Locke vom ersten Haarschnitt','s|Was wir über dein erstes Jahr erzählen','f|Gemeinsames Frühstück','v|Ball hin- und herrollen','f|Im Laub, Schnee oder Sand','f|Mit Freunden in deinem Alter','f|Erster Tag bei der Tagesmutter oder in der Krippe','v|Du räumst etwas ein und wieder aus','f|Du trinkst aus dem Becher','f|Der Blick aus dem Fenster','f|Neuer Zahn: das Lächeln von heute','f|Die erste eigene Zahnbürste']],
 ['m13','13 bis 18 Monate',13,18,[
-'v|Sicheres Laufen','f|Erste Gummistiefel in der Pfütze','f|Selbst mit dem Löffel essen','s|Deine ersten Wörter, gesammelt','f|Rutschen auf dem Spielplatz','v|Dein Lieblingslied, mitgesungen','f|Malen mit Wachsmalern','f|Turm aus Bauklötzen','f|Bobbycar oder Rutscheauto','v|Tiergeräusche nachmachen','f|Im Garten oder auf dem Balkon buddeln','f|Zähneputzen allein (fast)','f|Lesen im Bett','v|Tanzen zu Musik','f|Lieblingsjacke oder Lieblingsmütze','f|Besuch auf dem Bauernhof','f|Erstes Eis','s|Wie du Dinge benennst','f|Verstecken hinter dem Vorhang','f|Schlafend in einer lustigen Position']],
+'v|Sicheres Laufen','f|Erste Gummistiefel in der Pfütze','f|Selbst mit dem Löffel essen','s|Deine ersten Wörter, gesammelt','f|Rutschen auf dem Spielplatz','v|Dein Lieblingslied, mitgesungen','f|Malen mit Wachsmalern','f|Turm aus Bauklötzen','f|Bobbycar oder Rutscheauto','v|Tiergeräusche nachmachen','f|Im Garten oder auf dem Balkon buddeln','f|Zähneputzen allein (fast)','f|Lesen im Bett','v|Tanzen zu Musik','f|Lieblingsjacke oder Lieblingsmütze','f|Besuch auf dem Bauernhof','f|Erstes Eis','s|Wie du Dinge benennst','f|Verstecken hinter dem Vorhang','f|Schlafend in einer lustigen Position','f|Der erste Backenzahn','s|Wie das Zahnen sich anhört, ein ehrlicher Bericht']],
 ['m19','19 bis 24 Monate',19,24,[
-'v|Rennen und Hüpfen','s|Erste Sätze aus zwei Wörtern','f|Puzzle mit großen Teilen','f|Backen mit Mama oder Papa','f|Laufrad','v|Du singst ein Lied','f|Seifenblasen','f|Selbst anziehen (verkehrt herum zählt)','f|Fingerfarben','f|Erster Besuch im Kino oder Theater für Kleine','f|Der zweite Geburtstag','f|Familienfoto zum zweiten Geburtstag','s|Was du zu Bildern im Buch erzählst','f|Schwimmbad mit Schwimmflügeln','v|Kitzelkampf','f|Lieblingsessen auf dem Teller','f|Kuscheltier bekommt einen Namen','f|Erster Ausflug mit dem Zug','v|„Nein!“ mit Überzeugung','f|Mit dem Rucksack zur Kita']],
+'v|Rennen und Hüpfen','s|Erste Sätze aus zwei Wörtern','f|Puzzle mit großen Teilen','f|Backen mit Mama oder Papa','f|Laufrad','v|Du singst ein Lied','f|Seifenblasen','f|Selbst anziehen (verkehrt herum zählt)','f|Fingerfarben','f|Erster Besuch im Kino oder Theater für Kleine','f|Der zweite Geburtstag','f|Familienfoto zum zweiten Geburtstag','s|Was du zu Bildern im Buch erzählst','f|Schwimmbad mit Schwimmflügeln','v|Kitzelkampf','f|Lieblingsessen auf dem Teller','f|Kuscheltier bekommt einen Namen','f|Erster Ausflug mit dem Zug','v|„Nein!“ mit Überzeugung','f|Mit dem Rucksack zur Kita','f|Neuer Zahn: der Eckzahn','f|Zähneputzen vor dem Spiegel']],
 ['y2','2 Jahre',25,35,[
-'s|Gespräch beim Abendessen','f|Kreidebilder auf dem Gehweg','v|Ballspielen mit Kick','f|Verkleidet als Lieblingsfigur','f|Toilettentraining, der erste Erfolg','s|Deine Gute-Nacht-Fragen','f|Kuchenteig naschen','f|Laternenumzug','f|Erstes eigenes Bett','v|Du erzählst, was heute passiert ist','f|Höhle aus Decken','f|Garten oder Pflanze, die du gegossen hast','f|Lieblingsbuch, abgegriffen','f|Fahrrad mit Stützrädern oder Laufrad','f|Erster Zahnarztbesuch','s|Wie du „ich hab dich lieb“ sagst','f|Mit Opa und Oma unterwegs','f|Matschhose im Wald','v|Purzelbaum','f|Selbst gemaltes Bild am Kühlschrank']],
+'s|Gespräch beim Abendessen','f|Kreidebilder auf dem Gehweg','v|Ballspielen mit Kick','f|Verkleidet als Lieblingsfigur','f|Toilettentraining, der erste Erfolg','s|Deine Gute-Nacht-Fragen','f|Kuchenteig naschen','f|Laternenumzug','f|Erstes eigenes Bett','v|Du erzählst, was heute passiert ist','f|Höhle aus Decken','f|Garten oder Pflanze, die du gegossen hast','f|Lieblingsbuch, abgegriffen','f|Fahrrad mit Stützrädern oder Laufrad','f|Erster Zahnarztbesuch','s|Wie du „ich hab dich lieb“ sagst','f|Mit Opa und Oma unterwegs','f|Matschhose im Wald','v|Purzelbaum','f|Selbst gemaltes Bild am Kühlschrank','f|Alle 20 Milchzähne sind da','f|Zahnarztbesuch mit Mut']],
 ['y3','3 Jahre',36,47,[
 's|Mini-Interview zum Geburtstag','f|Erster Kindergartentag','f|Die Kindergartentasche','s|Was du über den Kindergarten erzählst','f|Freundschaft im Kindergarten','v|Fahrradfahren üben','f|Kostüm an Fasching','f|Erste Übernachtung bei Oma und Opa','s|Eine Geschichte, die du selbst erfindest','f|Dein Name, zum ersten Mal selbst gemalt','v|Lied aus dem Kindergarten','f|Plätzchen backen','f|Bauwerk aus Lego oder Duplo','f|Gartenarbeit','f|Strandburg','f|Mit der Taschenlampe im Dunkeln','v|Du erklärst uns die Welt','f|Selbst geschmierte Brotdose','f|Lieblingsplatz im Kindergarten','f|Kindergeburtstag mit Freunden']],
 ['y4','4 Jahre',48,59,[
@@ -1488,7 +1547,7 @@ function ideasHTML(){
 /* ---------- Kurze Anleitung ---------- */
 var TOUR={i:0,steps:[
  {sel:'.fab',icon:'plus',t:'Neuen Moment festhalten',d:'Mit dem Plus unten speicherst du Fotos, Videos oder Sprachnachrichten. Das Datum wird aus dem Foto übernommen, du gibst nur noch einen kurzen Titel ein.'},
- {tab:'ideas',icon:'award',t:'Ideen und Meilensteine',d:'Über 300 Ideen passend zum Alter. Einträge mit Stern sind Meilensteine wie das erste Lächeln. Antippen, Foto dazu, fertig.'},
+ {tab:'ideas',icon:'award',t:'Ideen und Meilensteine',d:'Über 350 Ideen passend zum Alter. Einträge mit Stern sind Meilensteine wie das erste Lächeln. Antippen, Foto dazu, fertig.'},
  {tab:'rit',icon:'repeat',t:'Rituale, Steckbrief und Film',d:'Unter Rituale findest du Monatsfotos, Briefe und Interviews zum Geburtstag. Im Steckbrief stehen die Geschichte deines Kindes, Größe und Gewicht und die Sicherung. Aus allem entsteht automatisch ein Film.'}
 ]};
 function tourMark(){
@@ -1969,7 +2028,7 @@ async function mergeFile(file){
       });
       lk.mem=lk.mem.filter(function(m){if(del['mem:'+m.id]){if(m.url)URL.revokeObjectURL(m.url);delPics(m);return false}return true});
       var rr=rk.rit||emptyRit(),lr=lk.rit=lk.rit||emptyRit();
-      ['letters','interviews'].forEach(function(t){lr[t]=lr[t]||{};for(var y in (rr[t]||{})){if(t==='letters'&&del['lt:'+y])continue;if(!lr[t][y]||newer(rr[t][y],lr[t][y])){var keepUrl=lr[t][y]&&lr[t][y].url;lr[t][y]=rr[t][y];if(t==='letters'&&rr[t][y].mediaId){need.push(rr[t][y].mediaId);if(keepUrl)URL.revokeObjectURL(keepUrl)}}}});
+      ['letters','interviews','teeth'].forEach(function(t){lr[t]=lr[t]||{};for(var y in (rr[t]||{})){if(t==='letters'&&del['lt:'+y])continue;if(!lr[t][y]||newer(rr[t][y],lr[t][y])){var keepUrl=lr[t][y]&&lr[t][y].url;lr[t][y]=rr[t][y];if(t==='letters'&&rr[t][y].mediaId){need.push(rr[t][y].mediaId);if(keepUrl)URL.revokeObjectURL(keepUrl)}}}});
       for(var ly in lr.letters)if(del['lt:'+ly]){var dl=lr.letters[ly];if(dl.mediaId)dbDel('media:'+dl.mediaId).catch(function(){});if(dl.url)URL.revokeObjectURL(dl.url);delete lr.letters[ly]}
       (rr.measures||[]).forEach(function(x){if(!del['msr:'+x.id]&&!lr.measures.some(function(y){return y.id===x.id}))lr.measures.push(x)});
       lr.measures=lr.measures.filter(function(x){return !del['msr:'+x.id]});
@@ -2036,6 +2095,12 @@ document.addEventListener('click',function(e){
   else if(a==='cam-cancel'){camStop();refreshCap()}
   else if(a==='film-tl'){S.filmMode='tl';setTab('film')}
   else if(a==='film-mode'){S.filmMode=b.getAttribute('data-v');if(S.filmMode==='jahr'&&!S.filmYear){var yl=yearsList(),last=yl.filter(function(y){return y.c&&!y.run}).pop();S.filmYear=last?last.n:yl[yl.length-1].n}render()}
+  else if(a==='teeth-open'){S.tooth=null;openSheet(teethHTML())}
+  else if(a==='tooth'){S.tooth=b.getAttribute('data-v');teethRefresh();var te=document.querySelector('.tedit');if(te)te.scrollIntoView({block:'nearest',behavior:'smooth'})}
+  else if(a==='tooth-x'){S.tooth=null;teethRefresh()}
+  else if(a==='tooth-save'){var td=$('tooth-date').value;if(!parseISO(td)){toast('Bitte wähle ein Datum.');return}var rr=R();rr.teeth=rr.teeth||{};var first=!teethOf().length;rr.teeth[S.tooth]={date:td,upd:Date.now()};S.tooth=null;save();teethRefresh();render();toast(first?'Der erste Zahn! Halte ihn doch mit einem Foto fest.':'Zahn eingetragen')}
+  else if(a==='tooth-del'){var rd=R();rd.teeth[S.tooth]={date:'',upd:Date.now()};S.tooth=null;save();teethRefresh();render();toast('Zahn entfernt')}
+  else if(a==='tooth-photo'){var tid=S.tooth,tdd=(R().teeth[tid]||{}).date;closeSheet();var noZ=teethOf().length===1&&!memOf('zahn');S.add=newAdd('f','',noZ?'zahn':'');S.add.ideaT=noZ?'':'Neuer Zahn: '+TT[+tid.split('-')[2]][0];if(tdd)S.add.toothDate=tdd;openSheet(addHTML());if(tdd){var ad=$('a-date');if(ad){ad.value=tdd;S.add.dateTouched=true}}}
   else if(a==='idea-qx'){var iq=$('idea-q');if(iq){iq.value='';ideaSearchRun();iq.focus()}}
   else if(a==='film-year'){S.filmYear=+b.getAttribute('data-v');render()}
   else if(a==='add-type'){recStop(true);camStop();S.add=newAdd(b.getAttribute('data-type'));var sg=document.querySelectorAll('.segb');for(var i=0;i<sg.length;i++)sg[i].setAttribute('aria-pressed',sg[i]===b);refreshCap()}
