@@ -369,6 +369,11 @@ input[type=date]{min-width:0;max-width:100%;box-sizing:border-box;-webkit-appear
 input[type=date].fld{width:100%;min-height:50px;line-height:1.3;text-align:left}
 input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
 .pf input[type=date]{width:100%}
+.isearch{display:flex;align-items:center;gap:8px;margin-top:14px;padding:0 6px 0 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+.isearch:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.isearch input{flex:1;min-width:0;border:0;background:none;padding:13px 0;font:inherit;font-size:16px;color:var(--ink);outline:none;-webkit-appearance:none;appearance:none}
+.isearch input::-webkit-search-cancel-button{display:none}
+.isearch .icon-btn{width:34px;height:34px}
 </style>
 </head>
 <body>
@@ -409,7 +414,8 @@ var P={
  chat:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
  repeat:'<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
  swap:'<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
- phone:'<rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>'
+ phone:'<rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>',
+ search:'<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>'
 };
 function ic(n,s){s=s||20;return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+P[n]+'</svg>'}
 
@@ -1448,6 +1454,19 @@ function ideasCard(){
   if(!open)return '<button class="icard" data-act="ideas-toggle"><span class="mk">'+ic('star',18)+'</span><span><b>Ideen für jetzt</b><small>'+l.length+' Vorschläge passend zum Alter</small></span><span class="icard-c">Zeigen</span></button>';
   return '<div class="gh" style="margin:20px 0 10px">Ideen für jetzt<span style="display:flex;gap:6px">'+(S.mem.length?'<button class="ghost" style="padding:7px 12px" data-act="ideas-toggle">Einklappen</button>':'')+'<button class="ghost" style="padding:7px 12px" data-act="tab" data-tab="ideas">Alle Ideen</button></span></div>'+l.map(function(x){return ideaRow(x,true)}).join('');
 }
+function fold(t){return String(t||'').toLowerCase().replace(/ä/g,'a').replace(/ö/g,'o').replace(/ü/g,'u').replace(/ß/g,'ss').replace(/[^a-z0-9 ]+/g,' ')}
+function ideaSearchHTML(q){
+  var words=fold(q).split(/\s+/).filter(Boolean);if(!words.length)return '';
+  var out='',n=0;
+  IDEAS.forEach(function(p,pi){
+    var hits=ideaList(pi).filter(function(x){var t=fold(x.t);return words.every(function(w){return t.indexOf(w)>=0})});
+    if(!hits.length)return;n+=hits.length;
+    out+='<div class="gh" style="margin:16px 0 8px">'+esc(p[1])+'<span>'+hits.length+(hits.length===1?' Treffer':' Treffer')+'</span></div>'+hits.map(function(x){return ideaRow(x,false)}).join('');
+  });
+  return n?'<p class="tag" style="margin:10px 2px 0">'+n+(n===1?' Idee gefunden. Antippen, um daraus einen Moment zu machen.':' Ideen gefunden. Antippen, um daraus einen Moment zu machen.')+'</p>'+out
+   :'<p class="tag" style="margin:12px 2px">Keine passende Idee gefunden. Du kannst den Moment trotzdem mit dem Plus unten festhalten oder unten einen eigenen Meilenstein anlegen.</p>';
+}
+function ideaSearchRun(){var i=$('idea-q');if(!i)return;S.ideaQ=i.value;var r=$('idea-res'),b=$('idea-browse'),c=$('idea-qx'),on=!!S.ideaQ.trim();if(r)r.innerHTML=ideaSearchHTML(S.ideaQ);if(b)b.hidden=on;if(c)c.hidden=!S.ideaQ}
 function ideasHTML(){
   var cur=ideaPhaseIndex(ageMonths(TODAY));if(S.ideaPh==null)S.ideaPh=cur;
   var pi=S.ideaPh,ph=IDEAS[pi],l=ideaList(pi),done=l.filter(function(x){return ideaDone(x.id)}).length,nh=l.filter(function(x){return ideaHidden(x.id)}).length;
@@ -1456,13 +1475,15 @@ function ideasHTML(){
   var total=IDEAS.reduce(function(a,p){return a+p[4].length},0),tot=S.ms.length,dn=doneCount(),C=2*Math.PI*42,off=C*(1-(tot?dn/tot:0));
   var out=topHTML()+'<h1>Ideen</h1><p class="lede">'+total+' Ideen von der Schwangerschaft bis zum 18. Geburtstag. Einträge mit Stern sind Meilensteine. Tippe etwas an, um daraus einen Moment zu machen.</p>'
    +'<div class="card pad mscard"><svg width="52" height="52" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--line)" stroke-width="11"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--accent)" stroke-width="11" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 50 50)"/></svg><div><p style="margin:0"><strong>'+dn+' von '+tot+' Meilensteinen</strong> erreicht</p><p class="tag" style="margin:0">Mit Haken ohne Foto abhaken, mit Antippen ein Foto dazu speichern.</p></div></div>'
+   +'<div class="isearch">'+ic('search',18)+'<input type="search" id="idea-q" placeholder="Idee suchen, z. B. Lächeln, Zahn, Oma" autocomplete="off" enterkeyhint="search" aria-label="Ideen durchsuchen" value="'+esc(S.ideaQ||'')+'"><button class="icon-btn" id="idea-qx" data-act="idea-qx" aria-label="Suche leeren"'+(S.ideaQ?'':' hidden')+'>'+ic('x',16)+'</button></div>'
+   +'<div id="idea-res">'+ideaSearchHTML(S.ideaQ||'')+'</div><div id="idea-browse"'+((S.ideaQ||'').trim()?' hidden':'')+'>'
    +'<div class="chips" id="idea-chips" style="margin-top:14px">'+chips+'</div>'
    +'<div class="gh" style="margin:18px 0 10px">'+esc(ph[1])+'<span>'+done+' von '+l.length+' festgehalten</span></div>'
    +vis.map(function(x){return ideaRow(x,true)}).join('')
    +(nh?'<button class="dash" data-act="idea-showhid">'+(S.showHid?'Ausgeblendete verstecken':nh+' ausgeblendete Ideen zeigen')+'</button>':'');
   if(S.msForm)out+='<div class="card pad" style="margin-top:6px"><label class="fl" for="ms-name" style="margin-top:0">Eigener Meilenstein in „'+esc(ph[1])+'“</label><input class="fld" id="ms-name" placeholder="z. B. Erste Fahrt mit dem Laufrad"><label class="fl" for="ms-when">Wann ungefähr? (optional)</label><input class="fld" id="ms-when" placeholder="z. B. ca. 2 Jahre"><p class="err" id="ms-err" hidden>Bitte gib einen Namen ein.</p><div class="btns"><button class="ghost main" data-act="ms-add">Anlegen</button><button class="ghost" data-act="ms-cancel">Abbrechen</button></div></div>';
   else out+='<button class="dash" data-act="ms-new">'+ic('plus',18)+'Eigenen Meilenstein anlegen</button>';
-  return out;
+  return out+'</div>';
 }
 /* ---------- Kurze Anleitung ---------- */
 var TOUR={i:0,steps:[
@@ -2015,6 +2036,7 @@ document.addEventListener('click',function(e){
   else if(a==='cam-cancel'){camStop();refreshCap()}
   else if(a==='film-tl'){S.filmMode='tl';setTab('film')}
   else if(a==='film-mode'){S.filmMode=b.getAttribute('data-v');if(S.filmMode==='jahr'&&!S.filmYear){var yl=yearsList(),last=yl.filter(function(y){return y.c&&!y.run}).pop();S.filmYear=last?last.n:yl[yl.length-1].n}render()}
+  else if(a==='idea-qx'){var iq=$('idea-q');if(iq){iq.value='';ideaSearchRun();iq.focus()}}
   else if(a==='film-year'){S.filmYear=+b.getAttribute('data-v');render()}
   else if(a==='add-type'){recStop(true);camStop();S.add=newAdd(b.getAttribute('data-type'));var sg=document.querySelectorAll('.segb');for(var i=0;i<sg.length;i++)sg[i].setAttribute('aria-pressed',sg[i]===b);refreshCap()}
   else if(a==='rec')recToggle(b.getAttribute('data-for'));
@@ -2118,6 +2140,7 @@ document.addEventListener('input',function(e){
   var t=e.target;
   if(t.id==='fscrub')filmSeek(t.value);
   else if(t.id==='a-title')titleState();
+  else if(t.id==='idea-q')ideaSearchRun();
   else if(t.id==='cam-o'){var cg=$('cam-g');if(cg)cg.style.opacity=t.value/100}
 
 });
